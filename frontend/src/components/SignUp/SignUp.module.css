@@ -1,0 +1,67 @@
+.main {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  font-size: 1.3rem;
+}
+
+.main form {
+  display: flex;
+  flex-direction: column;
+  max-width: 500px;
+  width: 80%;
+  gap: 10px;
+}
+.main h1 {
+  margin-bottom: 48px;
+}
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.label label {
+  color: rgb(207, 207, 207);
+}
+
+.main input {
+  background-color: #151515;
+  color: white;
+  border: 1px solid rgb(56, 56, 56);
+  border-radius: 0.5rem;
+  height: 2.5rem;
+  padding-left: 12px;
+}
+.main button {
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background-color: white;
+  border: none;
+  color: black;
+  font-weight: 550;
+  font-size: 1rem;
+}
+.main button:hover {
+  opacity: 0.9;
+}
+.main button:active {
+  opacity: 0.8;
+}
+.success {
+  margin: 0;
+  margin-top: 3px;
+  color: rgb(35, 213, 35);
+}
+.failed {
+  margin: 0;
+  margin-top: 3px;
+  color: rgb(239, 47, 47);
+}
+.main .prompt {
+  font-size: 1.1rem;
+  color: rgb(180, 180, 180);
+  margin: 5px 0;
+}
+.main .prompt a {
+  color: rgb(227, 227, 227);
+}
