@@ -7,9 +7,17 @@ require("dotenv").config();
 
 const app = express();
 expressWs(app);
+app.use(express.json());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
 const mainRouter = require("./router/main");
 
-app.get("/", mainRouter);
+app.use("/api", mainRouter);
 
 app.listen(process.env.PORT, () => {
   console.log(`server is running at http://localhost:${process.env.PORT}`);
