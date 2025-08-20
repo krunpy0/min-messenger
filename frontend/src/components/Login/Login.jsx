@@ -1,17 +1,54 @@
 import styles from "../SignUp/SignUp.module.css";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-// import { useEffect } from "react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 export function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [resultStatus, setResultStatus] = useState(null);
   const [result, setResult] = useState(null);
+  const navigate = useNavigate();
+
+  async function checkAuth() {
+    try {
+      const res = await fetch("http://localhost:3000/api/me", {
+        credentials: "include",
+      });
+      const result = await res.json();
+      if (result.user) navigate("/");
+    } catch (err) {
+      console.log(err);
+    }
+  }
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setResult(null);
     setResultStatus(null);
+
+    try {
+      const res = await fetch("http://localhost:3000/api/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      setResultStatus(res.ok);
+      const fetchResult = await res.json();
+      console.log(fetchResult);
+      setResult(fetchResult.message);
+      if (res.ok) {
+        navigate("/");
+      }
+    } catch (err) {
+      console.log(err);
+      setResultStatus(false);
+      setResult(`Failed to sign up, ${JSON.stringify(err)}`);
+    }
   }
 
   return (
