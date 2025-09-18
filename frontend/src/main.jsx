@@ -4,6 +4,7 @@ import "./index.css";
 import App from "./components/App/App.jsx";
 import { Login } from "./components/Login/Login.jsx";
 import { SignUp } from "./components/SignUp/SignUp.jsx";
+import TestLogin from "./components/TestLogin/TestLogin.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 const router = createBrowserRouter([
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
   {
     path: "/sign-up",
     element: <SignUp />,
+  },
+  {
+    path: "/test-chat",
+    element: <TestLogin />,
   },
 ]);
 createRoot(document.getElementById("root")).render(

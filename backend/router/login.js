@@ -6,7 +6,6 @@ const prisma = require("../prisma");
 const loginRouter = express.Router();
 
 loginRouter.post("/", async (req, res) => {
-  console.log(req.body);
   try {
     const { username, password } = req.body;
     if (!username || !password)
