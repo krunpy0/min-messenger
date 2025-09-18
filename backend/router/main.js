@@ -4,6 +4,7 @@ const signUpRouter = require("./signUp");
 const loginRouter = require("./login");
 const meRouter = require("./me");
 const userRouter = require("./user");
+const friendsRouter = require("./friends");
 
 mainRouter.get("/", (req, res) => {
   res.json({ message: "hello world" });
@@ -12,4 +13,5 @@ mainRouter.use("/sign-up", signUpRouter);
 mainRouter.use("/login", loginRouter);
 mainRouter.use("/me", meRouter);
 mainRouter.use("/user", userRouter);
+mainRouter.use("/friends", friendsRouter);
 module.exports = mainRouter;
