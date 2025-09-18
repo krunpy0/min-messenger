@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  # Node.js бэкенд
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dev_backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - DATABASE_URL=prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza19SYVdjanlVbEN6WEp4by1jZklRNjAiLCJhcGlfa2V5IjoiMDFLMzFWNDhGSEJWVEdRRFdXRkNUSzlDUU4iLCJ0ZW5hbnRfaWQiOiJmNDNjNDE0MzM2NTZkZThkMDI5NjYyODNjZGE1YzliNjY2YzUzYTk1ZDQ5YmExYWFmYmYwNDk1ZjQxZjBlMDYyIiwiaW50ZXJuYWxfc2VjcmV0IjoiODRiMjgxOWMtNTUxMi00MGMzLTlmMjgtZmQzMjE1MTZiMTBhIn0._dfHEJgZpJs8aFGZcfLBIiGsYPP5d6ZvT9ISwzLr2EE
+      - PORT=3000
+      - JWT_SECRET=urwCFgciorHnlUbQBWTjaBADaDYgtQZhPlGAAaJCjhseVvNA
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # React фронтенд
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dev_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
