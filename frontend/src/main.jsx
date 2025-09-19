@@ -8,6 +8,7 @@ import TestLogin from "./components/TestLogin/TestLogin.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import FriendsPage from "./components/Friends/FriendsPage.jsx";
 import { Logout } from "./components/Logout/Logout.jsx";
+import { FriendRequests } from "./components/FriendRequests/FriendRequests.jsx";
 
 const router = createBrowserRouter([
   {
@@ -29,6 +30,10 @@ const router = createBrowserRouter([
   {
     path: "/friends",
     element: <FriendsPage />,
+  },
+  {
+    path: "/friends/requests",
+    element: <FriendRequests />,
   },
   {
     path: "/logout",
