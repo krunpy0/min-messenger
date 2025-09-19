@@ -30,11 +30,18 @@ friendsRouter.get(
   async (req, res) => {
     try {
       const requests = await prisma.friendRequest.findMany({
-        where: { toUser: req.user.id, status: "pending" },
-        include: { from: { select: { id: true, username: true } } },
+        where: { toUserId: req.user.id, status: "pending" },
+        include: {
+          fromUser: {
+            select: {
+              id: true,
+              username: true,
+            },
+          },
+        },
       });
       console.log(requests);
-      res.status(200).json({ requests });
+      res.status(200).json(requests);
     } catch (err) {
       console.log(err);
       res.status(500).json({ message: "Unexpected server error" });
@@ -43,7 +50,7 @@ friendsRouter.get(
 );
 
 friendsRouter.post(
-  "/send/:friendId",
+  "/requests/send/:friendId",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
     const { friendId } = req.params;
@@ -73,8 +80,8 @@ friendsRouter.post(
       const existingRequest = await prisma.friendRequest.findFirst({
         where: {
           OR: [
-            { fromUser: req.user.id, toUser: friendId },
-            { toUser: req.user.id, fromUser: friendId },
+            { fromUserId: req.user.id, toUserId: friendId },
+            { toUserId: req.user.id, fromUserId: friendId },
           ],
         },
       });
@@ -83,8 +90,8 @@ friendsRouter.post(
 
       const friendRequest = await prisma.friendRequest.create({
         data: {
-          fromUser: req.user.id,
-          toUser: friendId,
+          fromUserId: req.user.id,
+          toUserId: friendId,
           status: "pending",
         },
       });
@@ -97,26 +104,37 @@ friendsRouter.post(
 );
 
 friendsRouter.put(
-  "/accept/:friendId",
+  "/requests/accept/:requestId",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
-    const { friendId } = req.params;
+    const { requestId } = req.params;
     try {
       const friendRequest = await prisma.friendRequest.findFirst({
-        where: { fromUser: friendId, toUser: req.user.id, status: "pending" },
+        where: {
+          id: requestId,
+          status: "pending",
+        },
       });
+      console.log(friendRequest);
       if (!friendRequest)
         return res.status(404).json({ message: "Friend request not found" });
 
-      await prisma.$transaction(async (prisma) => {
-        await prisma.friendRequest.update({
+      await prisma.$transaction(async (tx) => {
+        await tx.friendRequest.update({
           where: { id: friendRequest.id },
           data: { status: "accepted" },
         });
-        await prisma.friend.createMany({
+
+        await tx.friend.createMany({
           data: [
-            { userId: req.user.id, friendId },
-            { userId: friendId, friendId: req.user.id },
+            {
+              userId: friendRequest.fromUserId,
+              friendId: friendRequest.toUserId,
+            },
+            {
+              userId: friendRequest.toUserId,
+              friendId: friendRequest.fromUserId,
+            },
           ],
         });
       });
@@ -129,13 +147,16 @@ friendsRouter.put(
 );
 
 friendsRouter.put(
-  "/decline/:friendId",
+  "/requests/decline/:friendId",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
     const { friendId } = req.params;
     try {
       const friendRequest = await prisma.friendRequest.findFirst({
-        where: { fromUser: friendId, toUser: req.user.id, status: "pending" },
+        where: {
+          id: friendId,
+          status: "pending",
+        },
       });
       if (!friendRequest)
         return res.status(404).json({ message: "Friend request not found" });
@@ -153,7 +174,7 @@ friendsRouter.put(
 );
 
 friendsRouter.delete(
-  "/remove/:friendId",
+  "/requests/remove/:friendId",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
     const { friendId } = req.params;
