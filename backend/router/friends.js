@@ -15,7 +15,7 @@ friendsRouter.get(
           friends: true,
         },
       });
-      console.log(friends);
+      console.log(`friends: ${JSON.stringify(friends)}`);
       res.status(200).json(friends);
     } catch (err) {
       console.log(err);
@@ -24,7 +24,23 @@ friendsRouter.get(
   }
 );
 
-friendsRouter.get("/requests");
+friendsRouter.get(
+  "/requests",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    try {
+      const requests = await prisma.friendRequest.findMany({
+        where: { toUser: req.user.id, status: "pending" },
+        include: { from: { select: { id: true, username: true } } },
+      });
+      console.log(requests);
+      res.status(200).json({ requests });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ message: "Unexpected server error" });
+    }
+  }
+);
 
 friendsRouter.post(
   "/send/:friendId",
@@ -33,7 +49,7 @@ friendsRouter.post(
     const { friendId } = req.params;
     try {
       if (friendId === req.user.id) {
-        res
+        return res
           .status(400)
           .json({ message: "You can't send friend request to yourself" });
       }
@@ -72,7 +88,7 @@ friendsRouter.post(
           status: "pending",
         },
       });
-      res.status(201).json(friendRequest);
+      res.status(201).json({ friendRequest });
     } catch (err) {
       console.log(err);
       return res.status(500).json({ message: "Unexpected server error" });
@@ -80,7 +96,7 @@ friendsRouter.post(
   }
 );
 
-friendsRouter.post(
+friendsRouter.put(
   "/accept/:friendId",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
@@ -112,7 +128,7 @@ friendsRouter.post(
   }
 );
 
-friendsRouter.post(
+friendsRouter.put(
   "/decline/:friendId",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
@@ -136,4 +152,46 @@ friendsRouter.post(
   }
 );
 
+friendsRouter.delete(
+  "/remove/:friendId",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    const { friendId } = req.params;
+    try {
+      const friendship = await prisma.friend.findFirst({
+        where: {
+          OR: [
+            { userId: req.user.id, friendId },
+            { userId: friendId, friendId: req.user.id },
+          ],
+        },
+      });
+      if (!friendship)
+        return res.status(404).json({ message: "Friendship not found" });
+
+      await prisma.$transaction(async (prisma) => {
+        await prisma.friend.deleteMany({
+          where: {
+            OR: [
+              { userId: req.user.id, friendId },
+              { userId: friendId, friendId: req.user.id },
+            ],
+          },
+        });
+        await prisma.friendRequest.deleteMany({
+          where: {
+            OR: [
+              { fromUser: req.user.id, toUser: friendId },
+              { toUser: req.user.id, fromUser: friendId },
+            ],
+          },
+        });
+      });
+      res.status(200).json({ message: "Friend removed" });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ message: "Unexpected server error" });
+    }
+  }
+);
 module.exports = friendsRouter;

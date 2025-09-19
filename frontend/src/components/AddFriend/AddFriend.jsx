@@ -21,9 +21,28 @@ export function AddFriend() {
       console.log(response);
     } catch (err) {
       console.log(err);
-      setResults([]);
     }
   }
+
+  async function sendFriendRequest(friendId) {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/friends/send/${friendId}`,
+        { method: "POST", credentials: "include" }
+      );
+      const response = await res.json();
+      console.log(response);
+
+      if (res.ok) {
+        alert("Friend request sent");
+      } else {
+        alert(`Error: ${response.message}`);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -52,8 +71,14 @@ export function AddFriend() {
           {results &&
             results.map((result) => (
               <>
-                <div style={{ display: "flex" }}>
-                  <p>{result.username}</p> <button>Add</button>
+                <div style={{ display: "flex", gap: "10px" }} key={result.id}>
+                  <p>{result.username}</p>{" "}
+                  <button
+                    style={{ cursor: "pointer", padding: "5px 10px" }}
+                    onClick={() => sendFriendRequest(result.id)}
+                  >
+                    Add
+                  </button>
                 </div>
               </>
             ))}

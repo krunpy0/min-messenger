@@ -14,4 +14,9 @@ mainRouter.use("/login", loginRouter);
 mainRouter.use("/me", meRouter);
 mainRouter.use("/user", userRouter);
 mainRouter.use("/friends", friendsRouter);
+mainRouter.get("/logout", (req, res) => {
+  res.clearCookie("token");
+  res.json({ message: "Successfully logged out" });
+});
+
 module.exports = mainRouter;
