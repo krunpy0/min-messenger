@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 const FriendsPage = () => {
-  const [friends, setFriends] = useState({});
+  const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -28,7 +28,7 @@ const FriendsPage = () => {
         }
 
         const data = await response.json();
-        setFriends(data);
+        setFriends(data.friends || []);
         setError(null);
       } catch (err) {
         setError(err.message);
@@ -46,14 +46,19 @@ const FriendsPage = () => {
       try {
         setLoading(true);
         const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-        const response = await fetch(`${apiUrl}/api/friends`);
+        console.log(apiUrl);
+        const response = await fetch(`http://localhost:3000/api/`, {
+          credentials: "include",
+        });
 
         if (!response.ok) {
           throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
-        setFriends(data);
+        // Fix: Access the friends array from the response object
+        console.log(data);
+        setFriends(data.friends || []);
         setError(null);
       } catch (err) {
         setError(err.message);

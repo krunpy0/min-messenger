@@ -24,7 +24,10 @@ function App() {
   return (
     <>
       {user ? (
-        <p>Hello, {user.username}</p>
+        <>
+          <p>Hello, {user.username}</p>
+          <Link to={"/logout"}>Log out</Link>
+        </>
       ) : (
         <>
           <p>Not logged in</p> <Link to={"/login"}>Log in</Link>

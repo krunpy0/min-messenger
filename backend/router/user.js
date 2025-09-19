@@ -7,10 +7,16 @@ userRouter.get(
   "/:username",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
-    const username = req.params;
+    const { username } = req.params;
     try {
       const user = await prisma.user.findMany({
-        where: username,
+        where: {
+          username: {
+            contains: username,
+            mode: "insensitive",
+            not: req.user.username,
+          },
+        },
         select: {
           username: true,
           id: true,

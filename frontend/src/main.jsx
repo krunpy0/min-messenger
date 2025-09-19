@@ -7,6 +7,7 @@ import { SignUp } from "./components/SignUp/SignUp.jsx";
 import TestLogin from "./components/TestLogin/TestLogin.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import FriendsPage from "./components/Friends/FriendsPage.jsx";
+import { Logout } from "./components/Logout/Logout.jsx";
 
 const router = createBrowserRouter([
   {
@@ -28,6 +29,10 @@ const router = createBrowserRouter([
   {
     path: "/friends",
     element: <FriendsPage />,
+  },
+  {
+    path: "/logout",
+    element: <Logout />,
   },
 ]);
 createRoot(document.getElementById("root")).render(
