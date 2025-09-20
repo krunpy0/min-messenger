@@ -3,6 +3,8 @@ const mainRouter = express.Router();
 const signUpRouter = require("./signUp");
 const loginRouter = require("./login");
 const meRouter = require("./me");
+const userRouter = require("./user");
+const friendsRouter = require("./friends");
 
 mainRouter.get("/", (req, res) => {
   res.json({ message: "hello world" });
@@ -10,5 +12,11 @@ mainRouter.get("/", (req, res) => {
 mainRouter.use("/sign-up", signUpRouter);
 mainRouter.use("/login", loginRouter);
 mainRouter.use("/me", meRouter);
+mainRouter.use("/user", userRouter);
+mainRouter.use("/friends", friendsRouter);
+mainRouter.get("/logout", (req, res) => {
+  res.clearCookie("token");
+  res.json({ message: "Successfully logged out" });
+});
 
 module.exports = mainRouter;
