@@ -22,6 +22,7 @@ model User {
   updatedAt DateTime     @updatedAt
   birthday  DateTime?
   bio       String?
+  avatarUrl String?
   chats     ChatMember[]
   messages  Message[]
 
