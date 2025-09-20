@@ -10,15 +10,21 @@ services:
     ports:
       - "3000:3000"
     volumes:
+      # Монтируем исходный код для hot reload
       - ./backend:/app
+      # Исключаем node_modules из монтирования для производительности
       - /app/node_modules
     environment:
-      - DATABASE_URL=prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza19SYVdjanlVbEN6WEp4by1jZklRNjAiLCJhcGlfa2V5IjoiMDFLMzFWNDhGSEJWVEdRRFdXRkNUSzlDUU4iLCJ0ZW5hbnRfaWQiOiJmNDNjNDE0MzM2NTZkZThkMDI5NjYyODNjZGE1YzliNjY2YzUzYTk1ZDQ5YmExYWFmYmYwNDk1ZjQxZjBlMDYyIiwiaW50ZXJuYWxfc2VjcmV0IjoiODRiMjgxOWMtNTUxMi00MGMzLTlmMjgtZmQzMjE1MTZiMTBhIn0._dfHEJgZpJs8aFGZcfLBIiGsYPP5d6ZvT9ISwzLr2EE
+      - DATABASE_URL=prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza19SYVdanlVbEN6WEp4by1jZklRNjAiLCJhcGlfa2V5IjoiMDFLMzFWNDhGSEJWVEdRRFdXRkNUSzlDUU4iLCJ0ZW5hbnRfaWQiOiJmNDNjNDE0MzM2NTZkZThkMDI5NjYyODNjZGE1YzliNjY2YzUzYTk1ZDQ5YmExYWFmYmYwNDk1ZjQxZjBlMDYyIiwiaW50ZXJuYWxfc2VjcmV0IjoiODRiMjgxOWMtNTUxMi00MGMzLTlmMjgtZmQzMjE1MTZiMTBhIn0._dfHEJgZpJs8aFGZcfLBIiGsYPP5d6ZvT9ISwzLr2EE
       - PORT=3000
       - JWT_SECRET=urwCFgciorHnlUbQBWTjaBADaDYgtQZhPlGAAaJCjhseVvNA
+      - NODE_ENV=development
     networks:
       - app-network
     restart: unless-stopped
+    # Включаем stdin и tty для интерактивности
+    stdin_open: true
+    tty: true
 
   # React фронтенд
   frontend:
@@ -27,15 +33,22 @@ services:
       dockerfile: Dockerfile
     container_name: dev_frontend
     ports:
-      - "3000:3000"
+      - "5173:5173"  # Исправляем порт для фронтенда
     volumes:
+      # Монтируем исходный код для hot reload
       - ./frontend:/app
+      # Исключаем node_modules из монтирования для производительности
       - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_HOST=0.0.0.0
+      - VITE_PORT=5173
     depends_on:
       - backend
     networks:
       - app-network
     restart: unless-stopped
+    # Включаем stdin и tty для интерактивности
     stdin_open: true
     tty: true
 

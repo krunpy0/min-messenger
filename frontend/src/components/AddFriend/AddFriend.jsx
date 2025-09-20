@@ -20,7 +20,7 @@ export function AddFriend() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`${API_BASE_URL}/api/user/${query}`, {
+      const response = await fetch(`${API_BASE_URL}/api/user?username=${query}`, {
         credentials: "include",
       });
       
@@ -115,13 +115,14 @@ export function AddFriend() {
               key={result.id}
               style={{ 
                 display: "flex", 
+                maxWidth: "500px",
                 justifyContent: "space-between",
                 alignItems: "center",
                 padding: "10px",
-                border: "1px solid #eee",
+                border: "1px solid #404040",
                 borderRadius: "4px",
                 marginBottom: "8px",
-                backgroundColor: "#f9f9f9"
+                backgroundColor: "#303030"
               }}
             >
               <div>
@@ -136,15 +137,15 @@ export function AddFriend() {
                 style={{ 
                   cursor: "pointer", 
                   padding: "8px 16px",
-                  backgroundColor: '#2563eb',
+                  backgroundColor: '#101010',
                   color: 'white',
                   border: 'none',
                   borderRadius: '4px',
                   fontSize: '14px'
                 }}
                 onClick={() => sendFriendRequest(result.id)}
-                onMouseOver={(e) => e.target.style.backgroundColor = '#1d4ed8'}
-                onMouseOut={(e) => e.target.style.backgroundColor = '#2563eb'}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#202020'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#101010'}
               >
                 Send Request
               </button>
