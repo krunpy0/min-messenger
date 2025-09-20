@@ -239,7 +239,7 @@ friendsRouter.put(
   "/requests/decline/:requestId",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
-    const { friendId } = req.params;
+    const { requestId } = req.params;
     try {
       const friendRequest = await prisma.friendRequest.findFirst({
         where: {

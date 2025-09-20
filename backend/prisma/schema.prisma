@@ -57,6 +57,8 @@ model Friend {
 
 model Chat {
   id        String   @id @default(uuid())
+  type      String   @default("private") // private, group, channel
+  name      String? // название чата (для групповых чатов)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
