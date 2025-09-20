@@ -7,6 +7,7 @@ import {
   Calendar,
   AlertCircle,
   Loader2,
+  Trash2,
 } from "lucide-react";
 
 const FriendsPage = () => {
@@ -14,25 +15,29 @@ const FriendsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
   useEffect(() => {
     const fetchFriends = async () => {
       try {
         setLoading(true);
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-        const response = await fetch(`${apiUrl}/api/friends`, {
+        setError(null);
+        
+        const response = await fetch(`${API_BASE_URL}/api/friends`, {
           credentials: "include",
         });
-
-        if (!response.ok) {
-          throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
-        }
-
+        
         const data = await response.json();
-        setFriends(data.friends || []);
-        setError(null);
+        
+        if (!response.ok) {
+          throw new Error(data.message || `HTTP Error: ${response.status}`);
+        }
+        
+        setFriends(data.data || []);
       } catch (err) {
         setError(err.message);
-        console.error("Ошибка при загрузке друзей:", err);
+        console.error("Error loading friends:", err);
+        alert(`❌ Failed to load friends: ${err.message}`);
       } finally {
         setLoading(false);
       }
@@ -45,30 +50,55 @@ const FriendsPage = () => {
     const fetchFriends = async () => {
       try {
         setLoading(true);
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-        console.log(apiUrl);
-        const response = await fetch(`http://localhost:3000/api/`, {
+        setError(null);
+        
+        const response = await fetch(`${API_BASE_URL}/api/friends`, {
           credentials: "include",
         });
-
-        if (!response.ok) {
-          throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
-        }
-
+        
         const data = await response.json();
-        // Fix: Access the friends array from the response object
-        console.log(data);
-        setFriends(data.friends || []);
-        setError(null);
+        
+        if (!response.ok) {
+          throw new Error(data.message || `HTTP Error: ${response.status}`);
+        }
+        
+        setFriends(data.data || []);
       } catch (err) {
         setError(err.message);
-        console.error("Ошибка при загрузке друзей:", err);
+        console.error("Error loading friends:", err);
+        alert(`❌ Failed to load friends: ${err.message}`);
       } finally {
         setLoading(false);
       }
     };
 
     fetchFriends();
+  };
+
+  const handleRemoveFriend = async (friendId, friendUsername) => {
+    if (!window.confirm(`Are you sure you want to remove ${friendUsername} from your friends?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/friends/remove/${friendId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP Error: ${response.status}`);
+      }
+      
+      alert(`✅ ${data.message}`);
+      // Refresh the friends list
+      handleRefresh();
+    } catch (err) {
+      console.error("Error removing friend:", err);
+      alert(`❌ Failed to remove friend: ${err.message}`);
+    }
   };
 
   if (loading) {
@@ -287,25 +317,55 @@ const FriendsPage = () => {
               gap: 24,
             }}
           >
-            {friends.map((friend) => (
-              <div
-                key={friend.id || friend._id}
-                style={{
-                  backgroundColor: "white",
-                  borderRadius: 8,
-                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                  overflow: "hidden",
-                  transition: "box-shadow 0.3s",
-                }}
-                onMouseOver={(e) =>
-                  (e.target.style.boxShadow =
-                    "0 10px 15px -3px rgba(0, 0, 0, 0.1)")
-                }
-                onMouseOut={(e) =>
-                  (e.target.style.boxShadow =
-                    "0 4px 6px -1px rgba(0, 0, 0, 0.1)")
-                }
-              >
+            {friends.map((friendship) => {
+              const friend = friendship.friend; // Access the friend data from the relationship
+              return (
+                <div
+                  key={friendship.id || friend.id}
+                  style={{
+                    backgroundColor: "white",
+                    borderRadius: 8,
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    overflow: "hidden",
+                    transition: "box-shadow 0.3s",
+                    position: "relative",
+                  }}
+                  onMouseOver={(e) =>
+                    (e.target.style.boxShadow =
+                      "0 10px 15px -3px rgba(0, 0, 0, 0.1)")
+                  }
+                  onMouseOut={(e) =>
+                    (e.target.style.boxShadow =
+                      "0 4px 6px -1px rgba(0, 0, 0, 0.1)")
+                  }
+                >
+                {/* Remove Friend Button */}
+                <button
+                  onClick={() => handleRemoveFriend(friend.id, friend.username)}
+                  style={{
+                    position: "absolute",
+                    top: "8px",
+                    right: "8px",
+                    backgroundColor: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "32px",
+                    height: "32px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    zIndex: 1,
+                    transition: "background-color 0.2s",
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = "#dc2626"}
+                  onMouseOut={(e) => e.target.style.backgroundColor = "#ef4444"}
+                  title="Remove friend"
+                >
+                  <Trash2 size={16} />
+                </button>
+
                 {/* Profile Image */}
                 <div
                   style={{
@@ -478,7 +538,8 @@ const FriendsPage = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
