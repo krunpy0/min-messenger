@@ -4,7 +4,7 @@ import "./index.css";
 import App from "./components/App/App.jsx";
 import { Login } from "./components/Login/Login.jsx";
 import { SignUp } from "./components/SignUp/SignUp.jsx";
-import TestLogin from "./components/TestLogin/TestLogin.jsx";
+import TestChatComponent from "./components/Chat/TestChatComponent.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import FriendsPage from "./components/Friends/FriendsPage.jsx";
 import { Logout } from "./components/Logout/Logout.jsx";
@@ -24,8 +24,8 @@ const router = createBrowserRouter([
     element: <SignUp />,
   },
   {
-    path: "/test-chat",
-    element: <TestLogin />,
+    path: "/test-chat/:room?",
+    element: <TestChatComponent />,
   },
   {
     path: "/friends",
