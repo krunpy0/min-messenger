@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import "./App.css";
+import { AddFriend } from "../AddFriend/AddFriend";
+import FriendsPage from "../Friends/FriendsPage";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -20,8 +23,19 @@ function App() {
   }, []);
   return (
     <>
-      {user ? <p>Hello, {user.username}</p> : <p>Not logged in</p>}
+      {user ? (
+        <>
+          <p>Hello, {user.username}</p>
+          <Link to={"/logout"}>Log out</Link>
+        </>
+      ) : (
+        <>
+          <p>Not logged in</p> <Link to={"/login"}>Log in</Link>
+        </>
+      )}
       <h1>Hello world</h1>
+      <AddFriend />
+      <Link to={"/friends"}>Friends</Link>
     </>
   );
 }

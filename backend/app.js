@@ -4,7 +4,12 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const passport = require("./passport");
 const prisma = require("./prisma");
-require("dotenv").config();
+//require("dotenv").config();
+const io = require("socket.io")(8080, {
+  cors: {
+    origin: ["http://localhost:5173"],
+  },
+});
 
 const app = express();
 expressWs(app);
@@ -24,6 +29,15 @@ app.use("/api", mainRouter);
 app.get("/", (req, res) => {
   console.log(req.cookies);
 });
+
+io.on("connection", (socket) => {
+  console.log(socket.id);
+});
+
+io.on("send-message", (message) => {
+  console.log(message);
+});
+
 app.listen(process.env.PORT, () => {
   console.log(`server is running at http://localhost:${process.env.PORT}`);
 });
