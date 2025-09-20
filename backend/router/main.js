@@ -5,6 +5,7 @@ const loginRouter = require("./login");
 const meRouter = require("./me");
 const userRouter = require("./user");
 const friendsRouter = require("./friends");
+const chatsRouter = require("./chats");
 
 mainRouter.get("/", (req, res) => {
   res.json({ message: "hello world" });
@@ -14,6 +15,7 @@ mainRouter.use("/login", loginRouter);
 mainRouter.use("/me", meRouter);
 mainRouter.use("/user", userRouter);
 mainRouter.use("/friends", friendsRouter);
+mainRouter.use('/chats', chatsRouter);
 mainRouter.get("/logout", (req, res) => {
   res.clearCookie("token");
   res.json({ message: "Successfully logged out" });

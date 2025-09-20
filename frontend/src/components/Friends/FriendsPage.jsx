@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Users,
   UserCheck,
@@ -417,11 +418,11 @@ const FriendsPage = () => {
                           fontSize: 18,
                         }}
                       >
-                        {friend.name || friend.username || "Безымянный"}
+                        <Link to={`/chat/${friendship.id}`}>{friend.name || friend.username || "Безымянный"}</Link>
                       </h3>
                       {friend.username && friend.name && (
                         <p style={{ color: "#6b7280", fontSize: 14 }}>
-                          @{friend.username}
+                          <Link to={`/chat/${friendship.id}`}>@{friend.username}</Link>
                         </p>
                       )}
                     </div>
