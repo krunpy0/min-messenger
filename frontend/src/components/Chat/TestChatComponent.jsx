@@ -3,7 +3,6 @@ import { socket } from "../../socket";
 import { useParams } from "react-router-dom";
 
 export default function ChatComponent() {
-
   const [chat, setChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
