@@ -44,7 +44,7 @@ chatsRouter.get(
   async (req, res) => {
     try {
       const { userId } = req.params;
-      const chat = await prisma.chat.findUnique({
+      const chat = await prisma.chat.findFirst({
         where: { members: { some: { userId: userId } } },
         include: {
           members: {
@@ -143,7 +143,7 @@ chatsRouter.post(
         },
         select: { id: true, username: true },
       });
-
+      console.log(members)
       if (members.length !== membersId.length) {
         return res.status(400).json({
           message: "One or more members not found",
@@ -212,6 +212,20 @@ chatsRouter.post(
   }
 );
 
-
+chatsRouter.post("/:chatId/messages/", passport.authenticate("jwt", { session: false }), async (req, res) => {
+  const { text, files } = req.body;
+  const { chatId } = req.params;
+  try {
+    const message = await prisma.message.create({
+      data: {
+        text, files, userId: req.user.id, chatId
+      }
+    })
+    res.status(201).json(message)
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({message: "Unexpected server error"})
+  }
+})
 
 module.exports = chatsRouter;

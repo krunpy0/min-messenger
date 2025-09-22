@@ -418,7 +418,7 @@ const FriendsPage = () => {
                           fontSize: 18,
                         }}
                       >
-                        <Link to={`/chat/${friendship.id}`}>{friend.name || friend.username || "Безымянный"}</Link>
+                        <Link to={`/chat/${friend .id}`}>{friend.name || friend.username || "Безымянный"}</Link>
                       </h3>
                       {friend.username && friend.name && (
                         <p style={{ color: "#6b7280", fontSize: 14 }}>
