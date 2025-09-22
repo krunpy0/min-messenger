@@ -45,7 +45,13 @@ chatsRouter.get(
     try {
       const { userId } = req.params;
       const chat = await prisma.chat.findFirst({
-        where: { members: { some: { userId: userId } } },
+        where: {
+          type: "private",
+          AND: [
+            { members: { some: { userId: req.user.id } } },
+            { members: { some: { userId: userId } } },
+          ],
+        },
         include: {
           members: {
             select: {
@@ -56,6 +62,11 @@ chatsRouter.get(
           },
         },
       });
+
+      if (!chat) {
+        return res.status(404).json({ message: "Chat not found" });
+      }
+
       res.status(200).json(chat);
     } catch (err) {
       console.log(err);
@@ -69,6 +80,7 @@ chatsRouter.get(
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
     try {
+      console.log(`req.user from /:chatId/messages : ${JSON.stringify(req.user)}`)
       const { chatId } = req.params;
       const limitNum = parseInt(req.query.limit, 10);
       const offsetNum = parseInt(req.query.offset, 10);
