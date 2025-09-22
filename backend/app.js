@@ -3,6 +3,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const passport = require("./passport");
 const prisma = require("./prisma");
+const jwt = require('jsonwebtoken')
 const { instrument } = require('@socket.io/admin-ui')
 //require("dotenv").config();
 
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
 const io = require("socket.io")(8080, {
   cors: {
     origin: ["http://localhost:5173", "https://admin.socket.io"],
+    credentials: true
   },
 });
 
@@ -47,20 +49,75 @@ userIo.use((socket, next) => {
   }
 })
 
-io.on("connection", socket => {
+async function createMessage(cookieHeader, chatId, text, files = []) {
+  try {
+    const cookies = Object.fromEntries(
+      cookieHeader?.split("; ").map(c => c.split("="))
+    );
+    const token = cookies?.token; // если твой токен в cookie называется 'token'
+    if (!token) throw new Error("No token provided");
+    console.log(token)
+    // проверяем токен
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log(decoded)
+    const userId = decoded.id;
+    console.log(userId)
+    // Build create payload and include file attachments only when provided
+    const data = {
+      text,
+      userId,
+      chatId,
+    }
+
+    if (Array.isArray(files) && files.length > 0) {
+      // Expecting files as objects with url, type, size
+      data.files = {
+        create: files.map((file) => ({
+          url: file.url,
+          type: file.type,
+          size: file.size,
+        })),
+      }
+    }
+
+    const message = await prisma.message.create({
+      data,
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+            
+          }
+        }
+      }
+    })
+      return message
+  } catch (err) {
+    console.log(err)
+    return null;
+  }
+  
+}
+
+io.on("connection", async (socket) => {
   console.log(socket.id)
-  socket.on('send-message', (room, message) => {
+  socket.on('send-message', async (room, message) => {
     console.log(message)
+    console.log(socket.handshake.headers.cookie)
+    const newMessage = await createMessage(socket.handshake.headers.cookie, room, message)
+    console.log(newMessage)
     if (!room) {
-      socket.broadcast.emit('recieve-message', message)
+      io.emit('receive-message', newMessage)
     } else {
-      console.log(room)
-      socket.to(room).emit('recieve-message', message)
+      console.log(`sending message to ${room}`)
+      io.to(room).emit('receive-message', newMessage)
     }
   })
-  socket.on('join-room', (room, cb) => {
+  socket.on('join-room', (room) => {
+    console.log(`joining room ${room}`)
     socket.join(room)
-    cb("Joined room")
   })
 })
 
