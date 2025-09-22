@@ -48,11 +48,6 @@ chatsRouter.get(
         where: { members: { some: { userId: userId } } },
         include: {
           members: {
-            include: {
-              user: {
-                select: { id: true, username: true },
-              },
-            },
             select: {
               user: {
                 select: { id: true, username: true },
@@ -75,7 +70,16 @@ chatsRouter.get(
   async (req, res) => {
     try {
       const { chatId } = req.params;
-      const { limit, offset } = req.query;
+      const limitNum = parseInt(req.query.limit, 10);
+      const offsetNum = parseInt(req.query.offset, 10);
+          const take = Math.min(
+            Number.isNaN(limitNum) ? 50 : Math.max(limitNum, 1),
+            100
+          );
+          const skip = Math.max(
+            Number.isNaN(offsetNum) ? 0 : offsetNum,
+            0
+          );
       // Проверяем, что пользователь является участником чата
       const chatMember = await prisma.chatMember.findFirst({
         where: {
@@ -88,21 +92,26 @@ chatsRouter.get(
         return res.status(403).json({ message: "Access denied" });
       }
 
-      const messages = await prisma.message.findMany({
-        where: { chatId: chatId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              avatarUrl: true,
+      const [total, messages] = await Promise.all([
+        prisma.message.count({ where: { chatId: chatId } }),
+        prisma.message.findMany({
+          where: { chatId: chatId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                avatarUrl: true,
+              },
             },
           },
-        },
-        orderBy: { createdAt: "asc" },
-      });
+          orderBy: { createdAt: "desc" },
+          take,
+          skip,
+        }),
+      ]);
 
-      res.status(200).json(messages);
+      res.status(200).json({ items: messages, total, limit: take, offset: skip });
     } catch (err) {
       console.log(err);
       res.status(500).json({ message: "Unexpected server error" });
@@ -202,5 +211,7 @@ chatsRouter.post(
     }
   }
 );
+
+
 
 module.exports = chatsRouter;
