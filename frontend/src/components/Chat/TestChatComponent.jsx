@@ -1,17 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { socket } from "../../socket";
 import { useParams } from "react-router-dom";
+import { LucideSendHorizonal } from "lucide-react";
+import dayjs from "dayjs";
 
 export default function ChatComponent() {
   const [chat, setChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
+  const messagesEndRef = useRef(null)
   // const [input, setInput] = useState("");
   // const [room, setRoom] = useState("");
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const { room } = useParams();
   console.log(room);
-
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+  }, [messages])
   // Function to fetch chat messages for a given chatId (room) and set them in state
   async function getChatMessages(chatId, { limit = 20, offset = 0 } = {}) {
     if (!chatId) return [];
@@ -162,14 +167,16 @@ export default function ChatComponent() {
       <div>
         <h1>Chat</h1>
         <div>
-          <div>
+          <div className="max-h-[90vh] overflow-scroll">
             {[...messages].reverse().map((message) => (
-              <div>
-                <p style={{margin: 2}}>{message.user.username} <span style={{color: "#505050"}}>{message.createdAt}</span></p>
-                <p style={{margin: 2}}>{message.text}</p>
+              <div className="mb-10 ml-5 overflow-hidden">
+                <p className="m-2 font-bold">{message.user.username} <span className="text-gray-500">{dayjs(message.createdAt).format('H:m')}</span></p>
+                <p className="m-2">{message.text}</p>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
+          <div className="flex flex-row gap-1 p-2">
           <input
             type="text"
             name="message-input"
@@ -177,8 +184,10 @@ export default function ChatComponent() {
             placeholder="type something here..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            className="w-full rounded-2xl p-3  border-2 border-gray-400"
           />
-          <button onClick={() => sendMessage(message)}>Send</button>
+          <button onClick={() => sendMessage(message)} className="rounded-2xl p-3 border-2 border-gray-400 hover:border-gray-600 active:scale-95"><LucideSendHorizonal /></button>
+          </div>
         </div>
       </div>
     </div>
