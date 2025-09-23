@@ -3,7 +3,9 @@ import { socket } from "../../socket";
 import { useParams } from "react-router-dom";
 import { LucideSendHorizonal } from "lucide-react";
 import dayjs from "dayjs";
+import relativeTime from 'dayjs/plugin/relativeTime'
 
+dayjs.extend(relativeTime)
 export default function ChatComponent() {
   const [chat, setChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -169,9 +171,25 @@ export default function ChatComponent() {
         <div>
           <div className="max-h-[90vh] overflow-scroll">
             {[...messages].reverse().map((message) => (
-              <div className="mb-10 ml-5 overflow-hidden">
-                <p className="m-2 font-bold">{message.user.username} <span className="text-gray-500">{dayjs(message.createdAt).format('H:m')}</span></p>
-                <p className="m-2">{message.text}</p>
+              <div className="mb-5 flex items-top gap-4 hover:bg-neutral-900 p-1.5">
+                <div className="max-w-12 ml-5">
+                  {
+                  message.user.avatarUrl
+                  ?
+                  <img src={message.user.avatarUrl} alt="" className=" rounded-full" />
+                  : <div className="flex items-center justify-center bg-blue-700 w-12 h-12 rounded-full font-medium text-xl pt-1">{message.user.username.charAt(0).toUpperCase()}</div> }
+                </div>
+                <div>
+                  <div className="flex gap-2">
+                <p className="m-0 font-bold">{message.user.username}</p> <p> <span className="text-gray-500" title={dayjs(message.createdAt).format('dddd, MMMM D YYYY, HH:mm')}>
+                  {dayjs(message.createdAt).fromNow()}, at {dayjs(message.createdAt).format('H:mm')}
+                  </span>
+                  </p>
+                </div>
+                <div>
+                 <p className="m-0">{message.text}</p>
+                </div>
+              </div>
               </div>
             ))}
             <div ref={messagesEndRef} />
