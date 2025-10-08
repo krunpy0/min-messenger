@@ -319,11 +319,16 @@ export default function ChatComponent() {
                   {message.files && (
                     <div>
                       {message.files.map((file) => (
-                        <div
-                          key={file.url}
-                          className="flex border-gray-700 border-2 rounded-2xl p-4 mt-2"
-                        >
-                          <a href={file.url}>{file.url}</a>
+                        <div key={file.url}>
+                          {file.type.startsWith("image/") ? (
+                            <div className="max-w-3xl ">
+                              <img src={file.url} alt={file.name}></img>
+                            </div>
+                          ) : (
+                            <div className="flex border-gray-700 border-2 rounded-2xl p-4 mt-2">
+                              <a href={file.url}>{file.name || file.url}</a>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

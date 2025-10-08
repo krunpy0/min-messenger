@@ -83,6 +83,7 @@ async function createMessage(cookieHeader, chatId, text, files) {
             url: file.url,
             type: determineMimeType(file.name || file.url),
             size: Number.isFinite(file.size) ? file.size : 0,
+            name: file.name,
           })),
       };
     }
