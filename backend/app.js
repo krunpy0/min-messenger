@@ -100,6 +100,19 @@ async function createMessage(cookieHeader, chatId, text, files = []) {
   }
   
 }
+async function deleteMessage(cookieHeader, chatId, message) {
+  console.log(`deleting message ${message}`)
+  const cookies = Object.fromEntries(
+    cookieHeader?.split("; ").map(c => c.split("="))
+  );
+  const token = cookies?.token; // если твой токен в cookie называется 'token'
+  if (!token) throw new Error("No token provided");
+  const deletedMessage = await prisma.message.update({
+    where: { id: message, chatId: chatId },
+    data: { deleted: true }
+  })
+  return deletedMessage
+}
 
 io.on("connection", async (socket) => {
   console.log(socket.id)
@@ -115,6 +128,7 @@ io.on("connection", async (socket) => {
       io.to(room).emit('receive-message', newMessage)
     }
   })
+  
   socket.on('join-room', (room) => {
     console.log(`joining room ${room}`)
     socket.join(room)
