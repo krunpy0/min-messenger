@@ -235,13 +235,14 @@ export default function ChatComponent() {
 
   async function sendAttachment() {
     const formData = buildFormData();
-    const res = await fetch(`${API_BASE_URL}/api/files`, {
+    const res = await fetch(`${API_BASE_URL}/api/files/storage`, {
       method: "POST",
       body: formData,
       credentials: "include",
     });
     const data = await res.json();
     console.log(data);
+    return data;
   }
 
   async function sendMessage(outgoingMessage) {

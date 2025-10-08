@@ -23,7 +23,10 @@ const upload = multer({
     bucket: "krunpy-main",
     acl: "public-read",
     key: (req, file, cb) => {
-      cb(null, `uploads/${Date.now()}_${file.originalname}`);
+      const safeName = file.originalname
+        .replace(/ /g, "_")
+        .replace(/[^\w\.\-]/g, "");
+      cb(null, `uploads/${Date.now()}_${safeName}`);
     },
   }),
   limits: {
@@ -32,17 +35,37 @@ const upload = multer({
 });
 
 filesRouter.post(
-  "/",
+  "/storage",
   passport.authenticate("jwt", { session: false }),
   upload.array("files[]"),
   async (req, res) => {
-    const files = req.files.map((f) => ({
-      url: f.location,
-      name: f.originalname,
-      size: f.size,
-    }));
+    const files = req.files.map((f) => {
+      return {
+        url: f.location,
+        name: f.originalname,
+        size: f.size,
+      };
+    });
     res.json({ files });
   }
 );
 
+filesRouter.post(
+  "/cdn",
+  passport.authenticate("jwt", { session: false }),
+  upload.single("file"),
+  async (req, res) => {
+    const files = req.files.map((f) => {
+      const cdnUrl = f.location.replace(
+        "https://storage.yandexcloud.net/krunpy-main",
+        "https://cdn.krunpy.ru"
+      );
+      return {
+        url: cdnUrl,
+        name: f.originalname,
+        size: f.size,
+      };
+    });
+  }
+);
 module.exports = filesRouter;
