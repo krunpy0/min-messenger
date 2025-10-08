@@ -3,10 +3,10 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const passport = require("./passport");
 const prisma = require("./prisma");
-const jwt = require('jsonwebtoken')
-const { instrument } = require('@socket.io/admin-ui')
+const jwt = require("jsonwebtoken");
+const { instrument } = require("@socket.io/admin-ui");
+const mime = require("mime-types");
 //require("dotenv").config();
-
 
 const app = express();
 app.use(express.json());
@@ -26,58 +26,65 @@ app.get("/", (req, res) => {
   console.log(req.cookies);
 });
 
-
 const io = require("socket.io")(8080, {
   cors: {
     origin: ["http://localhost:5173", "https://admin.socket.io"],
-    credentials: true
+    credentials: true,
   },
 });
 
-
-const userIo = io.of('/user')
-userIo.on('connection', socket => {
-  console.log('Connected to userspace' + socket.username)
-})
+const userIo = io.of("/user");
+userIo.on("connection", (socket) => {
+  console.log("Connected to userspace" + socket.username);
+});
 
 userIo.use((socket, next) => {
   if (socket.handshake.token) {
-    socket.username = socket.handshake.token
-    next()
+    socket.username = socket.handshake.token;
+    next();
   } else {
-    next(new Error('No token'))
+    next(new Error("No token"));
   }
-})
+});
 
-async function createMessage(cookieHeader, chatId, text, files = []) {
+function determineMimeType(nameOrUrl) {
+  const fallback = "application/octet-stream";
+  if (!nameOrUrl) return fallback;
+  const guessed = mime.lookup(nameOrUrl);
+  return typeof guessed === "string" ? guessed : fallback;
+}
+
+async function createMessage(cookieHeader, chatId, text, files) {
   try {
     const cookies = Object.fromEntries(
-      cookieHeader?.split("; ").map(c => c.split("="))
+      cookieHeader?.split("; ").map((c) => c.split("="))
     );
     const token = cookies?.token; // если твой токен в cookie называется 'token'
     if (!token) throw new Error("No token provided");
-    console.log(token)
+    console.log(token);
     // проверяем токен
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log(decoded)
+    console.log(decoded);
     const userId = decoded.id;
-    console.log(userId)
+    console.log(userId);
     // Build create payload and include file attachments only when provided
     const data = {
       text,
       userId,
       chatId,
-    }
+    };
 
     if (Array.isArray(files) && files.length > 0) {
-      // Expecting files as objects with url, type, size
+      // Expect files as { url, name, size }
       data.files = {
-        create: files.map((file) => ({
-          url: file.url,
-          type: file.type,
-          size: file.size,
-        })),
-      }
+        create: files
+          .filter((f) => f && f.url)
+          .map((file) => ({
+            url: file.url,
+            type: determineMimeType(file.name || file.url),
+            size: Number.isFinite(file.size) ? file.size : 0,
+          })),
+      };
     }
 
     const message = await prisma.message.create({
@@ -88,54 +95,58 @@ async function createMessage(cookieHeader, chatId, text, files = []) {
             id: true,
             username: true,
             avatarUrl: true,
-            
-          }
-        }
-      }
-    })
-      return message
+          },
+        },
+        files: true,
+      },
+    });
+    return message;
   } catch (err) {
-    console.log(err)
+    console.log(err);
     return null;
   }
-  
 }
 async function deleteMessage(cookieHeader, chatId, message) {
-  console.log(`deleting message ${message}`)
+  console.log(`deleting message ${message}`);
   const cookies = Object.fromEntries(
-    cookieHeader?.split("; ").map(c => c.split("="))
+    cookieHeader?.split("; ").map((c) => c.split("="))
   );
   const token = cookies?.token; // если твой токен в cookie называется 'token'
   if (!token) throw new Error("No token provided");
   const deletedMessage = await prisma.message.update({
     where: { id: message, chatId: chatId },
-    data: { deleted: true }
-  })
-  return deletedMessage
+    data: { deleted: true },
+  });
+  return deletedMessage;
 }
 
 io.on("connection", async (socket) => {
-  console.log(socket.id)
-  socket.on('send-message', async (room, message) => {
-    console.log(message)
-    console.log(socket.handshake.headers.cookie)
-    const newMessage = await createMessage(socket.handshake.headers.cookie, room, message)
-    console.log(newMessage)
+  console.log(socket.id);
+  socket.on("send-message", async (room, message, files = []) => {
+    console.log(message);
+    console.log(socket.handshake.headers.cookie);
+    const newMessage = await createMessage(
+      socket.handshake.headers.cookie,
+      room,
+      message,
+      files
+    );
+    console.log(newMessage);
     if (!room) {
-      io.emit('receive-message', newMessage)
+      io.emit("receive-message", newMessage);
     } else {
-      console.log(`sending message to ${room}`)
-      io.to(room).emit('receive-message', newMessage)
+      console.log(`sending message to ${room}`);
+      io.to(room).emit("receive-message", newMessage);
     }
-  })
-  
-  socket.on('join-room', (room) => {
-    console.log(`joining room ${room}`)
-    socket.join(room)
-  })
-})
+  });
 
-instrument(io, {auth: false})
+  socket.on("join-room", (room) => {
+    console.log(`joining room ${room}`);
+    socket.join(room);
+  });
+});
+
+instrument(io, { auth: false });
 
 app.listen(process.env.PORT, () => {
   console.log(`server is running at http://localhost:${process.env.PORT}`);

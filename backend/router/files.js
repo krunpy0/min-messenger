@@ -46,7 +46,7 @@ filesRouter.post(
         size: f.size,
       };
     });
-    res.json({ files });
+    res.json(files);
   }
 );
 
