@@ -12,6 +12,7 @@ export default function ChatComponent() {
   const [message, setMessage] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [attachments, setAttachments] = useState([]);
+  const [previewImage, setPreviewImage] = useState(null);
   const messagesEndRef = useRef(null);
   const dragCounter = useRef(0);
   // const [input, setInput] = useState("");
@@ -90,6 +91,16 @@ export default function ChatComponent() {
       socket.disconnect();
     };
   }, []);
+
+  // Close fullscreen preview on Escape
+  useEffect(() => {
+    if (!previewImage) return;
+    function handleKeyDown(e) {
+      if (e.key === "Escape") setPreviewImage(null);
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [previewImage]);
 
   // Global page drag-and-drop handlers
   useEffect(() => {
@@ -322,7 +333,17 @@ export default function ChatComponent() {
                         <div key={file.url}>
                           {file.type.startsWith("image/") ? (
                             <div className="max-w-3xl ">
-                              <img src={file.url} alt={file.name}></img>
+                              <img
+                                src={file.url}
+                                alt={file.name}
+                                className="cursor-zoom-in rounded-lg"
+                                onClick={() =>
+                                  setPreviewImage({
+                                    url: file.url,
+                                    name: file.name,
+                                  })
+                                }
+                              />
                             </div>
                           ) : (
                             <div className="flex border-gray-700 border-2 rounded-2xl p-4 mt-2">
@@ -408,6 +429,29 @@ export default function ChatComponent() {
           <div className="pointer-events-none border-2 border-dashed border-gray-300 rounded-2xl px-8 py-6 bg-neutral-900/70 text-gray-200 text-lg">
             Drop to add to message
           </div>
+        </div>
+      )}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+          onClick={() => setPreviewImage(null)}
+        >
+          <button
+            aria-label="Close image preview"
+            className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl leading-none"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPreviewImage(null);
+            }}
+          >
+            ×
+          </button>
+          <img
+            src={previewImage.url}
+            alt={previewImage.name || "preview"}
+            className="max-w-[95vw] max-h-[95vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>
