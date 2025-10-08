@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { socket } from "../../socket";
 import { useParams } from "react-router-dom";
-import { LucideSendHorizonal } from "lucide-react";
+import { DivideSquare, LucideSendHorizonal } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
@@ -246,7 +246,7 @@ export default function ChatComponent() {
   }
 
   async function sendMessage(outgoingMessage) {
-    if (!outgoingMessage?.trim()) return;
+    if (!outgoingMessage?.trim() && attachments.length <= 0) return;
 
     try {
       let currentChat = chat;
@@ -264,8 +264,12 @@ export default function ChatComponent() {
       // Make sure we're connected and in the room
       ensureSocketConnected();
       joinRoom(currentChat.id);
+      let files;
 
-      socket.emit("send-message", currentChat.id, outgoingMessage);
+      if (attachments.length > 0) {
+        files = await sendAttachment();
+      }
+      socket.emit("send-message", currentChat.id, outgoingMessage, files);
       setMessage("");
     } catch (e) {
       console.error(e);
@@ -312,6 +316,18 @@ export default function ChatComponent() {
                   <div>
                     <p className="m-0">{message.text}</p>
                   </div>
+                  {message.files && (
+                    <div>
+                      {message.files.map((file) => (
+                        <div
+                          key={file.url}
+                          className="flex border-gray-700 border-2 rounded-2xl p-4 mt-2"
+                        >
+                          <a href={file.url}>{file.url}</a>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -370,11 +386,7 @@ export default function ChatComponent() {
             />
             <button
               onClick={() => {
-                if (attachments.length > 0) {
-                  sendAttachment();
-                } else {
-                  sendMessage(message);
-                }
+                sendMessage(message);
               }}
               className="rounded-2xl p-3 border-2 border-gray-400 hover:border-gray-600 active:scale-95"
             >

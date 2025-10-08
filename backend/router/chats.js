@@ -80,18 +80,17 @@ chatsRouter.get(
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
     try {
-      console.log(`req.user from /:chatId/messages : ${JSON.stringify(req.user)}`)
+      console.log(
+        `req.user from /:chatId/messages : ${JSON.stringify(req.user)}`
+      );
       const { chatId } = req.params;
       const limitNum = parseInt(req.query.limit, 10);
       const offsetNum = parseInt(req.query.offset, 10);
-          const take = Math.min(
-            Number.isNaN(limitNum) ? 50 : Math.max(limitNum, 1),
-            100
-          );
-          const skip = Math.max(
-            Number.isNaN(offsetNum) ? 0 : offsetNum,
-            0
-          );
+      const take = Math.min(
+        Number.isNaN(limitNum) ? 50 : Math.max(limitNum, 1),
+        100
+      );
+      const skip = Math.max(Number.isNaN(offsetNum) ? 0 : offsetNum, 0);
       // Проверяем, что пользователь является участником чата
       const chatMember = await prisma.chatMember.findFirst({
         where: {
@@ -109,6 +108,7 @@ chatsRouter.get(
         prisma.message.findMany({
           where: { chatId: chatId },
           include: {
+            files: true,
             user: {
               select: {
                 id: true,
@@ -123,7 +123,9 @@ chatsRouter.get(
         }),
       ]);
 
-      res.status(200).json({ items: messages, total, limit: take, offset: skip });
+      res
+        .status(200)
+        .json({ items: messages, total, limit: take, offset: skip });
     } catch (err) {
       console.log(err);
       res.status(500).json({ message: "Unexpected server error" });
@@ -155,7 +157,7 @@ chatsRouter.post(
         },
         select: { id: true, username: true },
       });
-      console.log(members)
+      console.log(members);
       if (members.length !== membersId.length) {
         return res.status(400).json({
           message: "One or more members not found",
@@ -224,20 +226,27 @@ chatsRouter.post(
   }
 );
 
-chatsRouter.post("/:chatId/messages/", passport.authenticate("jwt", { session: false }), async (req, res) => {
-  const { text, files } = req.body;
-  const { chatId } = req.params;
-  try {
-    const message = await prisma.message.create({
-      data: {
-        text, files, userId: req.user.id, chatId
-      }
-    })
-    res.status(201).json(message)
-  } catch (err) {
-    console.log(err)
-    res.status(500).json({message: "Unexpected server error"})
+chatsRouter.post(
+  "/:chatId/messages/",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    const { text, files } = req.body;
+    const { chatId } = req.params;
+    try {
+      const message = await prisma.message.create({
+        data: {
+          text,
+          files,
+          userId: req.user.id,
+          chatId,
+        },
+      });
+      res.status(201).json(message);
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ message: "Unexpected server error" });
+    }
   }
-})
+);
 
 module.exports = chatsRouter;
