@@ -142,6 +142,7 @@ export default function ChatComponent() {
     });
 
     socket.on("edited-message", (message) => {
+      console.log(message);
       setMessages((prev) =>
         prev.map((m) => (m.id === message.id ? message : m))
       );
@@ -423,6 +424,17 @@ export default function ChatComponent() {
                 currentUserId={user?.id}
                 onDelete={(x) => deleteMessage(x)}
                 onPreviewImage={(img) => setPreviewImage(img)}
+                onEdit={(message, newText) => {
+                  try {
+                    if (!chat?.id) return;
+                    socket.emit("edit-message", chat.id, {
+                      ...message,
+                      text: newText,
+                    });
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
               />
             ))}
             <div ref={messagesEndRef} />
