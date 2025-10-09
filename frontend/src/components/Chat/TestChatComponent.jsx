@@ -7,6 +7,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import MessageItem from "./MessageItem";
 import AttachmentsBar from "./AttachmentsBar";
 import Composer from "./Composer";
+import bytes from "bytes";
 
 dayjs.extend(relativeTime);
 export default function ChatComponent() {
@@ -21,6 +22,7 @@ export default function ChatComponent() {
   const [pageLimit] = useState(20);
   const [nextOffset, setNextOffset] = useState(0);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const isUserAtBottomRef = useRef(true);
@@ -108,11 +110,16 @@ export default function ChatComponent() {
       } else {
         setChat(response);
         setNextOffset(0);
-        await getChatMessages(response.id, {
-          limit: pageLimit,
-          offset: 0,
-          replace: true,
-        });
+        setIsInitialLoading(true);
+        try {
+          await getChatMessages(response.id, {
+            limit: pageLimit,
+            offset: 0,
+            replace: true,
+          });
+        } finally {
+          setIsInitialLoading(false);
+        }
         // If chat exists, connect and join its room immediately
         ensureSocketConnected();
         joinRoom(response.id);
@@ -414,29 +421,44 @@ export default function ChatComponent() {
           >
             {messages.length < totalMessages && (
               <div className="text-center text-sm text-gray-400 py-2">
-                {isLoadingPage ? "Loading..." : "Scroll up to load more"}
+                {isLoadingPage ? "" : "Scroll up to load more"}
               </div>
             )}
-            {[...messages].reverse().map((m) => (
-              <MessageItem
-                key={m.id}
-                item={m}
-                currentUserId={user?.id}
-                onDelete={(x) => deleteMessage(x)}
-                onPreviewImage={(img) => setPreviewImage(img)}
-                onEdit={(message, newText) => {
-                  try {
-                    if (!chat?.id) return;
-                    socket.emit("edit-message", chat.id, {
-                      ...message,
-                      text: newText,
-                    });
-                  } catch (e) {
-                    console.error(e);
-                  }
-                }}
-              />
-            ))}
+            {isLoadingPage && (
+              <>
+                <SkeletonMessageItem />
+                <SkeletonMessageItem />
+                <SkeletonMessageItem />
+              </>
+            )}
+            {isInitialLoading ? (
+              <>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <SkeletonMessageItem key={`s-${i}`} />
+                ))}
+              </>
+            ) : (
+              [...messages].reverse().map((m) => (
+                <MessageItem
+                  key={m.id}
+                  item={m}
+                  currentUserId={user?.id}
+                  onDelete={(x) => deleteMessage(x)}
+                  onPreviewImage={(img) => setPreviewImage(img)}
+                  onEdit={(message, newText) => {
+                    try {
+                      if (!chat?.id) return;
+                      socket.emit("edit-message", chat.id, {
+                        ...message,
+                        text: newText,
+                      });
+                    } catch (e) {
+                      console.error(e);
+                    }
+                  }}
+                />
+              ))
+            )}
             <div ref={messagesEndRef} />
           </div>
           <AttachmentsBar
@@ -484,6 +506,27 @@ export default function ChatComponent() {
           />
         </div>
       )}
+    </div>
+  );
+}
+
+// Simple black skeletons mimicking message layout
+function SkeletonMessageItem() {
+  return (
+    <div className="mb-5 flex items-top gap-4 p-1.5 relative">
+      <div className="max-w-12 ml-5 ">
+        <div className="w-12 h-12 rounded-full bg-gray-600" />
+      </div>
+      <div className="flex-1">
+        <div className="flex gap-2 items-center mt-1">
+          <div className="h-4 w-32 rounded bg-gray-600" />
+          <div className="h-3 w-24 rounded bg-gray-600" />
+        </div>
+        <div className="mt-2 space-y-2">
+          <div className="h-4 w-4/5 rounded bg-gray-600" />
+          <div className="h-4 w-3/5 rounded bg-gray-600" />
+        </div>
+      </div>
     </div>
   );
 }

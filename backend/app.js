@@ -6,6 +6,7 @@ const prisma = require("./prisma");
 const jwt = require("jsonwebtoken");
 const { instrument } = require("@socket.io/admin-ui");
 const mime = require("mime-types");
+const { S3Client, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 //require("dotenv").config();
 
 const app = express();
@@ -119,12 +120,17 @@ async function deleteMessage(cookieHeader, chatId, message) {
   console.log(decoded);
   const userId = decoded.id;
   console.log(`user trying to delete: ${userId}, ${message.userId}`);
+
   if (userId !== message.userId)
     throw new Error("You are not allowed to delete this message");
+
   const deletedMessage = await prisma.message.update({
     where: { id: message.id, chatId: chatId },
     data: { deleted: true },
+    include: { files: true },
   });
+
+  Promise.all(message.files.map((file) => deleteFileFromBucket(file)));
   return deletedMessage;
 }
 
@@ -153,9 +159,39 @@ async function editMessage(cookieHeader, chatId, message, newText) {
           avatarUrl: true,
         },
       },
+      files: true,
     },
   });
   return editedMessage;
+}
+
+async function deleteFileFromBucket(file) {
+  const s3 = new S3Client({
+    region: "ru-central1",
+    endpoint: "https://storage.yandexcloud.net/",
+    forcePathStyle: true,
+    credentials: {
+      accessKeyId: process.env.YA_ACCESS_KEY,
+      secretAccessKey: process.env.YA_SECRET_KEY,
+    },
+  });
+  // Derive correct S3 object key from file URL. Supports both storage and CDN URLs.
+  let key = `uploads/${file?.name || ""}`;
+  if (file && file.url) {
+    try {
+      const u = new URL(file.url);
+      // "/krunpy-main/uploads/.." -> "uploads/..."; "/uploads/..." -> "uploads/..."
+      key = u.pathname.replace(/^\/krunpy-main\//, "").replace(/^\//, "");
+    } catch (e) {
+      // fallback to name-based key
+    }
+  }
+  const deleteObjectCommand = new DeleteObjectCommand({
+    Bucket: "krunpy-main",
+    Key: key,
+  });
+  const deletedObject = await s3.send(deleteObjectCommand);
+  return deletedObject;
 }
 
 io.on("connection", async (socket) => {

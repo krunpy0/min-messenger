@@ -1,3 +1,4 @@
+import bytes from "bytes";
 export default function AttachmentsBar({
   attachments,
   onClearAll,
@@ -25,13 +26,11 @@ export default function AttachmentsBar({
           >
             <span
               className="text-sm text-gray-200 truncate max-w-[16rem]"
-              title={`${file.name} (${(file.size / 1024).toFixed(1)} KB)`}
+              title={`${file.name} (${bytes(file.size)})`}
             >
               {file.name}
             </span>
-            <span className="text-xs text-gray-500">
-              {(file.size / 1024).toFixed(1)} KB
-            </span>
+            <span className="text-xs text-gray-500">{bytes(file.size)}</span>
             <button
               onClick={() => onRemoveAt(idx)}
               className="text-gray-400 hover:text-white text-sm"

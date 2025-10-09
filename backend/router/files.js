@@ -4,7 +4,7 @@ const prisma = require("../prisma");
 const filesRouter = express.Router();
 const multer = require("multer");
 const multerS3 = require("multer-s3");
-const { S3Client } = require("@aws-sdk/client-s3");
+const { S3Client, HeadObjectCommand } = require("@aws-sdk/client-s3");
 require("dotenv").config();
 
 const s3 = new S3Client({
@@ -30,7 +30,7 @@ const upload = multer({
     },
   }),
   limits: {
-    fileSize: 50 * 1024 * 1024,
+    fileSize: 1000 * 1024 * 1024,
   },
 });
 
@@ -39,13 +39,24 @@ filesRouter.post(
   passport.authenticate("jwt", { session: false }),
   upload.array("files[]"),
   async (req, res) => {
-    const files = req.files.map((f) => {
-      return {
-        url: f.location,
-        name: f.originalname,
-        size: f.size,
-      };
-    });
+    const files = await Promise.all(
+      req.files.map(async (f) => {
+        let fileSize = f.size;
+        if (fileSize === 0) {
+          const headObjectCommand = new HeadObjectCommand({
+            Bucket: "krunpy-main",
+            Key: f.key,
+          });
+          const headObject = await s3.send(headObjectCommand);
+          fileSize = headObject.ContentLength;
+        }
+        return {
+          url: f.location,
+          name: f.originalname,
+          size: fileSize,
+        };
+      })
+    );
     res.json(files);
   }
 );

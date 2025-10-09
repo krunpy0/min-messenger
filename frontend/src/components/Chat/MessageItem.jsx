@@ -2,6 +2,7 @@ import { LucideTrash2, LucidePenLine } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { useState } from "react";
+import bytes from "bytes";
 // removed incorrect backend import
 
 dayjs.extend(relativeTime);
@@ -51,7 +52,6 @@ export default function MessageItem({
               className="text-gray-500"
               title={dayjs(item.createdAt).format("dddd, MMMM D YYYY, HH:mm")}
             >
-              {dayjs(item.createdAt).fromNow()}, at{" "}
               {dayjs(item.createdAt).format("H:mm")}
               {item.updatedAt !== item.createdAt && <span> (Edited)</span>}
             </span>
@@ -118,8 +118,9 @@ export default function MessageItem({
                     />
                   </div>
                 ) : (
-                  <div className="flex border-gray-700 border-2 rounded-2xl p-4 mt-2">
+                  <div className="flex border-gray-700 border-2 rounded-2xl p-4 mt-2 gap-2">
                     <a href={file.url}>{file.name || file.url}</a>
+                    <p className="text-xs text-gray-400">{bytes(file.size)}</p>
                   </div>
                 )}
               </div>
