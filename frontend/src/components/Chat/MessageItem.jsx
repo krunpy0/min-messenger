@@ -1,6 +1,8 @@
 import { LucideTrash2, LucidePenLine } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { useState } from "react";
+// removed incorrect backend import
 
 dayjs.extend(relativeTime);
 
@@ -11,6 +13,9 @@ export default function MessageItem({
   onPreviewImage,
   onEdit,
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(item.text || "");
+
   return (
     <div className="mb-5 flex items-top gap-4 hover:bg-neutral-900 p-1.5 group relative">
       <div className="max-w-12 ml-5 ">
@@ -19,7 +24,12 @@ export default function MessageItem({
             <button onClick={() => onDelete(item)}>
               <LucideTrash2 />
             </button>
-            <button onClick={() => onEdit?.(item)}>
+            <button
+              onClick={() => {
+                setEditText(item.text || "");
+                setIsEditing(true);
+              }}
+            >
               <LucidePenLine />
             </button>
           </div>
@@ -43,13 +53,52 @@ export default function MessageItem({
             >
               {dayjs(item.createdAt).fromNow()}, at{" "}
               {dayjs(item.createdAt).format("H:mm")}
+              {item.updatedAt !== item.createdAt && <span> (Edited)</span>}
             </span>
           </p>
         </div>
         <div>
-          <p className="m-0">{item.text}</p>
+          {isEditing ? (
+            <div className="flex items-center gap-2 mt-1">
+              <input
+                type="text"
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    onEdit?.(item, editText);
+                    setIsEditing(false);
+                  } else if (e.key === "Escape") {
+                    setIsEditing(false);
+                    setEditText(item.text || "");
+                  }
+                }}
+                className="w-full rounded-2xl p-2 border-2 border-gray-400"
+                autoFocus
+              />
+              <button
+                onClick={() => {
+                  onEdit?.(item, editText);
+                  setIsEditing(false);
+                }}
+                className="rounded-2xl px-3 py-2 border-2 border-gray-400 hover:border-gray-600 active:scale-95"
+              >
+                Ok
+              </button>
+              <button
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditText(item.text || "");
+                }}
+                className="text-sm text-gray-400 hover:text-gray-200"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <p className="m-0">{item.text}</p>
+          )}
         </div>
-        <button onClick={() => onDelete(item.id)}>delete</button>
         {item.files && (
           <div>
             {item.files.map((file) => (

@@ -135,15 +135,25 @@ async function editMessage(cookieHeader, chatId, message, newText) {
   const token = cookies?.token;
   if (!token) throw new Error("No token provided");
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  console.log(decoded);
+  // console.log(decoded);
   const userId = decoded.id;
-  console.log(userId);
+  // console.log(userId);
+  console.log(message, newText);
   if (userId !== message.userId)
     throw new Error("You are not allowed to delete this message");
 
   const editedMessage = await prisma.message.update({
-    where: { id: message.id },
-    data: { text: newText },
+    where: { id: message.id, chatId: chatId },
+    data: { text: message.text },
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          avatarUrl: true,
+        },
+      },
+    },
   });
   return editedMessage;
 }
@@ -182,13 +192,14 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("edit-message", async (room, message, newText) => {
+    console.log(`editing message`);
     const editedMessage = await editMessage(
       socket.handshake.headers.cookie,
       room,
       message,
       newText
     );
-
+    console.log(editedMessage);
     io.to(room).emit("edited-message", editedMessage);
   });
 

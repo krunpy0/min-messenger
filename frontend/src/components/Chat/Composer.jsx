@@ -2,7 +2,7 @@ import { LucideSendHorizonal } from "lucide-react";
 
 export default function Composer({ value, onChange, onSubmit }) {
   return (
-    <div className="flex fixed bottom-10 left-1 right-1 flex-row gap-1 p-2">
+    <div className="flex relative bottom-3 left-1 right-1 flex-row gap-1 p-2 mb-3">
       <input
         type="text"
         name="message-input"
