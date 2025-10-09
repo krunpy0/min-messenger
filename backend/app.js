@@ -20,6 +20,7 @@ app.use(
 );
 
 const mainRouter = require("./router/main");
+const { socket } = require("../frontend/src/socket");
 
 app.use("/api", mainRouter);
 app.get("/", (req, res) => {
@@ -112,13 +113,39 @@ async function deleteMessage(cookieHeader, chatId, message) {
   const cookies = Object.fromEntries(
     cookieHeader?.split("; ").map((c) => c.split("="))
   );
-  const token = cookies?.token; // если твой токен в cookie называется 'token'
+  const token = cookies?.token;
   if (!token) throw new Error("No token provided");
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  console.log(decoded);
+  const userId = decoded.id;
+  console.log(`user trying to delete: ${userId}, ${message.userId}`);
+  if (userId !== message.userId)
+    throw new Error("You are not allowed to delete this message");
   const deletedMessage = await prisma.message.update({
-    where: { id: message, chatId: chatId },
+    where: { id: message.id, chatId: chatId },
     data: { deleted: true },
   });
   return deletedMessage;
+}
+
+async function editMessage(cookieHeader, chatId, message, newText) {
+  const cookies = Object.fromEntries(
+    cookieHeader?.split("; ").map((c) => c.split("="))
+  );
+  const token = cookies?.token;
+  if (!token) throw new Error("No token provided");
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  console.log(decoded);
+  const userId = decoded.id;
+  console.log(userId);
+  if (userId !== message.userId)
+    throw new Error("You are not allowed to delete this message");
+
+  const editedMessage = await prisma.message.update({
+    where: { id: message.id },
+    data: { text: newText },
+  });
+  return editedMessage;
 }
 
 io.on("connection", async (socket) => {
@@ -139,6 +166,30 @@ io.on("connection", async (socket) => {
       console.log(`sending message to ${room}`);
       io.to(room).emit("receive-message", newMessage);
     }
+  });
+
+  socket.on("delete-message", async (room, message) => {
+    console.log(message);
+    console.log(socket.handshake.headers.cookie);
+    const deletedMessage = await deleteMessage(
+      socket.handshake.headers.cookie,
+      room,
+      message
+    );
+    console.log(deletedMessage);
+    console.log(`deleted message from ${room}`);
+    io.to(room).emit("deleted-message", deletedMessage);
+  });
+
+  socket.on("edit-message", async (room, message, newText) => {
+    const editedMessage = await editMessage(
+      socket.handshake.headers.cookie,
+      room,
+      message,
+      newText
+    );
+
+    io.to(room).emit("edited-message", editedMessage);
   });
 
   socket.on("join-room", (room) => {

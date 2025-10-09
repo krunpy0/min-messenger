@@ -106,7 +106,7 @@ chatsRouter.get(
       const [total, messages] = await Promise.all([
         prisma.message.count({ where: { chatId: chatId } }),
         prisma.message.findMany({
-          where: { chatId: chatId },
+          where: { chatId: chatId, deleted: false },
           include: {
             files: true,
             user: {

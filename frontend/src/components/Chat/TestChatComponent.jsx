@@ -1,12 +1,16 @@
 import { useEffect, useState, useRef } from "react";
 import { socket } from "../../socket";
 import { useParams } from "react-router-dom";
-import { DivideSquare, LucideSendHorizonal } from "lucide-react";
+import { DivideSquare } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import MessageItem from "./MessageItem";
+import AttachmentsBar from "./AttachmentsBar";
+import Composer from "./Composer";
 
 dayjs.extend(relativeTime);
 export default function ChatComponent() {
+  const [user, setUser] = useState(null);
   const [chat, setChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
@@ -19,15 +23,37 @@ export default function ChatComponent() {
   const [isLoadingPage, setIsLoadingPage] = useState(false);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const isUserAtBottomRef = useRef(true);
   const dragCounter = useRef(0);
   // const [input, setInput] = useState("");
   // const [room, setRoom] = useState("");
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const { room } = useParams();
   console.log(room);
+  function editMessage(message) {}
+  async function getUser() {
+    const res = await fetch(`${API_BASE_URL}/api/me`, {
+      credentials: "include",
+    });
+    const data = await res.json();
+    console.log(data);
+    setUser(data.user);
+  }
+  useEffect(() => {
+    getUser();
+  }, []);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   }, []);
+
+  // Auto-scroll to bottom on new messages only if user was already at bottom
+  useEffect(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    if (isUserAtBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages.length]);
   // Function to fetch chat messages for a given chatId (room) and set them in state
   async function getChatMessages(
     chatId,
@@ -52,7 +78,7 @@ export default function ChatComponent() {
       setTotalMessages(total);
 
       if (replace) {
-        setMessages(items);
+        setMessages(items.filter((m) => m.deleted == false));
         setNextOffset(items.length);
       } else {
         setMessages((prev) => {
@@ -110,12 +136,25 @@ export default function ChatComponent() {
       setTotalMessages((prev) => (Number.isFinite(prev) ? prev + 1 : 1));
     });
 
+    socket.on("deleted-message", (message) => {
+      setMessages((prev) => prev.filter((m) => m.id !== message.id));
+      setTotalMessages((prev) => (Number.isFinite(prev) ? prev - 1 : 0));
+    });
+
+    socket.on("edited-message", (message) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === message.id ? message : m))
+      );
+    });
+
     socket.on("connect", () => {
       console.log("Socket connected");
     });
 
     return () => {
       socket.off("receive-message");
+      socket.off("deleted-message");
+      socket.off("edited-message");
       socket.off("connect");
       socket.disconnect();
     };
@@ -126,6 +165,11 @@ export default function ChatComponent() {
     function handleScroll() {
       const el = messagesContainerRef.current;
       if (!el || isLoadingPage) return;
+      // Track whether user is near bottom (within 16px tolerance)
+      const tolerance = 16;
+      const distanceFromBottom =
+        el.scrollHeight - el.scrollTop - el.clientHeight;
+      isUserAtBottomRef.current = distanceFromBottom <= tolerance;
       if (el.scrollTop <= 0 && messages.length < totalMessages) {
         // Preserve scroll position after appending older messages
         const prevScrollHeight = el.scrollHeight;
@@ -147,6 +191,10 @@ export default function ChatComponent() {
     const el = messagesContainerRef.current;
     if (!el) return;
     el.addEventListener("scroll", handleScroll);
+    // Initialize position flag at mount
+    const tolerance = 16;
+    isUserAtBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight <= tolerance;
     return () => el.removeEventListener("scroll", handleScroll);
   }, [chat?.id, nextOffset, messages.length, totalMessages, isLoadingPage]);
 
@@ -340,8 +388,17 @@ export default function ChatComponent() {
       }
       socket.emit("send-message", currentChat.id, outgoingMessage, files);
       setMessage("");
+      setAttachments([]);
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  async function deleteMessage(message) {
+    try {
+      socket.emit("delete-message", chat.id, message);
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -359,132 +416,27 @@ export default function ChatComponent() {
                 {isLoadingPage ? "Loading..." : "Scroll up to load more"}
               </div>
             )}
-            {[...messages].reverse().map((message) => (
-              <div className="mb-5 flex items-top gap-4 hover:bg-neutral-900 p-1.5">
-                <div className="max-w-12 ml-5">
-                  {message.user.avatarUrl ? (
-                    <img
-                      src={message.user.avatarUrl}
-                      alt=""
-                      className=" rounded-full"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center bg-blue-700 w-12 h-12 rounded-full font-medium text-xl pt-1">
-                      {message.user.username.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div className="flex gap-2">
-                    <p className="m-0 font-bold">{message.user.username}</p>{" "}
-                    <p>
-                      {" "}
-                      <span
-                        className="text-gray-500"
-                        title={dayjs(message.createdAt).format(
-                          "dddd, MMMM D YYYY, HH:mm"
-                        )}
-                      >
-                        {dayjs(message.createdAt).fromNow()}, at{" "}
-                        {dayjs(message.createdAt).format("H:mm")}
-                      </span>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="m-0">{message.text}</p>
-                  </div>
-                  {message.files && (
-                    <div>
-                      {message.files.map((file) => (
-                        <div key={file.url}>
-                          {file.type.startsWith("image/") ? (
-                            <div className="max-w-3xl ">
-                              <img
-                                src={file.url}
-                                alt={file.name}
-                                className="cursor-zoom-in rounded-lg"
-                                onClick={() =>
-                                  setPreviewImage({
-                                    url: file.url,
-                                    name: file.name,
-                                  })
-                                }
-                              />
-                            </div>
-                          ) : (
-                            <div className="flex border-gray-700 border-2 rounded-2xl p-4 mt-2">
-                              <a href={file.url}>{file.name || file.url}</a>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+            {[...messages].reverse().map((m) => (
+              <MessageItem
+                key={m.id}
+                item={m}
+                currentUserId={user?.id}
+                onDelete={(x) => deleteMessage(x)}
+                onPreviewImage={(img) => setPreviewImage(img)}
+              />
             ))}
             <div ref={messagesEndRef} />
           </div>
-          {attachments.length > 0 && (
-            <div className="px-2">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="m-0 text-sm text-gray-400">
-                  Attachments ({attachments.length})
-                </p>
-                <button
-                  onClick={clearAttachments}
-                  className="text-xs text-gray-300 hover:text-white underline"
-                >
-                  Clear all
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {attachments.map((file, idx) => (
-                  <div
-                    key={`${file.name}-${file.size}-${file.lastModified}-${idx}`}
-                    className="flex items-center gap-2 rounded-lg border border-gray-600 px-2 py-1 bg-neutral-900"
-                  >
-                    <span
-                      className="text-sm text-gray-200 truncate max-w-[16rem]"
-                      title={`${file.name} (${(file.size / 1024).toFixed(
-                        1
-                      )} KB)`}
-                    >
-                      {file.name}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {(file.size / 1024).toFixed(1)} KB
-                    </span>
-                    <button
-                      onClick={() => removeAttachment(idx)}
-                      className="text-gray-400 hover:text-white text-sm"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="flex flex-row gap-1 p-2">
-            <input
-              type="text"
-              name="message-input"
-              id="message-input"
-              placeholder="type something here..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="w-full rounded-2xl p-3  border-2 border-gray-400"
-            />
-            <button
-              onClick={() => {
-                sendMessage(message);
-              }}
-              className="rounded-2xl p-3 border-2 border-gray-400 hover:border-gray-600 active:scale-95"
-            >
-              <LucideSendHorizonal />
-            </button>
-          </div>
+          <AttachmentsBar
+            attachments={attachments}
+            onClearAll={clearAttachments}
+            onRemoveAt={(idx) => removeAttachment(idx)}
+          />
+          <Composer
+            value={message}
+            onChange={setMessage}
+            onSubmit={sendMessage}
+          />
         </div>
       </div>
       {isDragging && (
