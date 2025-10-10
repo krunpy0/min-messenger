@@ -199,7 +199,7 @@ export function CustomizeProfile() {
   return (
     <div className="flex flex-col items-center justify-center h-screen gap-2 w-full">
       <h1 className="text-4xl font-semibold mb-2">Customize Profile</h1>
-      <div className="max-w-[700px] w-full bg-[#242424] border border-[#424242] rounded-md flex p-15 gap-10">
+      <div className="max-w-[700px] w-full bg-[#242424] border border-[#424242] rounded-xl flex p-15 gap-10">
         <div className="flex flex-col gap-4">
           <div className="w-[200px] h-[200px] bg-neutral-900 rounded-full relative group">
             {user.avatarUrl && (

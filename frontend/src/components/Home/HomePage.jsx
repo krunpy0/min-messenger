@@ -52,10 +52,11 @@ const HomePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a]">
+    <div className="h-[100vh] bg-[#1a1a1a] overflow-y-hidden">
       {/* Profile Header */}
-      <ProfileHeader />
-
+      <div className="mt-4">
+        <ProfileHeader />
+      </div>
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid gap-8 lg:grid-cols-2">

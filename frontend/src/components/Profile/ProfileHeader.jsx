@@ -55,7 +55,7 @@ const ProfileHeader = () => {
 
   if (loading) {
     return (
-      <div className="bg-[#202020] border-b border-[#363636] p-4">
+      <div className="max-w-[1120px] w-[97vw] mx-auto flex items-center justify-between bg-[#202020] border border-[#363636] rounded-2xl p-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-neutral-700 rounded-full animate-pulse"></div>
@@ -68,7 +68,7 @@ const ProfileHeader = () => {
 
   if (error || !user) {
     return (
-      <div className="bg-[#202020] border-b border-[#363636] p-4">
+      <div className="max-w-[1120px] w-[97vw] mx-auto flex items-center justify-between bg-[#202020] border border-[#363636] rounded-2xl p-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <User className="w-8 h-8 text-neutral-400" />
@@ -80,8 +80,8 @@ const ProfileHeader = () => {
   }
 
   return (
-    <div className="bg-[#202020] border-b border-[#363636] p-4">
-      <div className="max-w-5xl mx-auto flex items-center justify-between">
+    <div className="">
+      <div className="max-w-[1120px] w-[97vw] mx-auto flex items-center justify-between bg-[#202020] border border-[#363636] rounded-2xl p-4">
         <Link
           to="/customize"
           className="flex items-center gap-3 hover:bg-[#2a2a2a] rounded-lg p-2 transition-colors group"

@@ -85,7 +85,7 @@ export function AddFriendCard() {
   }, [friend]);
 
   return (
-    <div className="bg-[#242424] border border-[#424242] rounded-lg p-6">
+    <div className="bg-[#242424] border border-[#424242] rounded-2xl p-6">
       <div className="flex items-center gap-3 mb-4">
         <UserPlus className="w-6 h-6 text-rose-400" />
         <h2 className="text-xl font-semibold text-white">Add friend</h2>
