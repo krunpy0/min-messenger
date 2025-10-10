@@ -26,6 +26,7 @@ model User {
   avatarUrl String?
   chats     ChatMember[]
   messages  Message[]
+  verified  Boolean      @default(false)
 
   sentRequests     FriendRequest[] @relation("SentRequests")
   receivedRequests FriendRequest[] @relation("ReceivedRequests")

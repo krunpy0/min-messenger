@@ -100,6 +100,23 @@ export default function ChatComponent() {
     }
   }
 
+  async function getFriendInfo(friendId) {
+    try {
+      const result = await fetch(`${API_BASE_URL}/api/friends/${friendId}`, {
+        credentials: "include",
+      });
+      const response = await result.json();
+      console.log("Friend info:", response);
+      if (response && response.data.user) {
+        setFriend(response.data.user);
+        console.log(response.data.user);
+        console.log(friend);
+      }
+    } catch (err) {
+      console.log("Error fetching friend info:", err);
+    }
+  }
+
   async function getChatInfo() {
     try {
       const result = await fetch(`${API_BASE_URL}/api/chats/${room}`, {
@@ -113,6 +130,18 @@ export default function ChatComponent() {
         setChat(response);
         setNextOffset(0);
         setIsInitialLoading(true);
+
+        // Get friend info if this is a private chat
+        if (response.type === "private") {
+          console.log(`private`);
+          const friendId = room;
+          console.log(`friendId: ${friendId}`);
+          if (friendId) {
+            await getFriendInfo(friendId);
+            console.log(friend);
+          }
+        }
+
         try {
           await getChatMessages(response.id, {
             limit: pageLimit,
@@ -414,83 +443,110 @@ export default function ChatComponent() {
   }
 
   return (
-    <div>
-      <div className="">
-        <div className="p-2 bg-neutral-900 w-full">
-          <div>
-            <button
-              onClick={(e) => navigate("/")}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-rose-600
-                     border border-rose-400 text-white rounded-xl font-medium 
-                     hover:rose-600 hover:shadow-lg
-                     active:scale-95 w-full
-                     focus:outline-none
-                     box-border"
-            >
-              <ArrowLeft size={18} />
-              <span>Назад</span>
-            </button>
+    <div className="h-screen-safe flex flex-col bg-neutral-900">
+      {/* Header with back button and friend info */}
+      <div className="flex items-center gap-3 p-3 pt-safe border border-neutral-700 bg-neutral-900 flex-shrink-0 mt-2 rounded-2xl w-[95%] md:w-[99%] mx-auto">
+        <button
+          onClick={(e) => navigate("/")}
+          className="flex items-center justify-center gap-2 px-3 py-2 bg-rose-600
+                   border border-rose-400 text-white rounded-lg font-medium 
+                   hover:bg-rose-700 hover:shadow-lg
+                   active:scale-95 transition-all duration-200
+                   focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:ring-offset-neutral-900
+                   min-h-[44px] min-w-[44px] touch-manipulation"
+        >
+          <ArrowLeft size={18} />
+        </button>
+
+        {/* Friend info */}
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-lg">
+            {friend.avatarUrl ? (
+              <img
+                src={friend.avatarUrl}
+                alt={friend.name || friend.username}
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <span>
+                {(friend.name || friend.username || "?")
+                  .charAt(0)
+                  .toUpperCase()}
+              </span>
+            )}
           </div>
-          <div>{}</div>
-        </div>
-        <div>
-          <div
-            ref={messagesContainerRef}
-            className="max-h-[90vh] overflow-scroll"
-          >
-            {messages.length < totalMessages && (
-              <div className="text-center text-sm text-gray-400 py-2">
-                {isLoadingPage ? "" : "Scroll up to load more"}
+          <div className="flex-1 min-w-0">
+            <div className="text-white font-semibold text-lg truncate">
+              {friend.name || friend.username || "Unknown"}
+            </div>
+            {friend.name && friend.username && (
+              <div className="text-gray-400 text-sm truncate">
+                @{friend.username}
               </div>
             )}
-            {isLoadingPage && (
-              <>
-                <SkeletonMessageItem />
-                <SkeletonMessageItem />
-                <SkeletonMessageItem />
-              </>
-            )}
-            {isInitialLoading ? (
-              <>
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <SkeletonMessageItem key={`s-${i}`} />
-                ))}
-              </>
-            ) : (
-              [...messages].reverse().map((m) => (
-                <MessageItem
-                  key={m.id}
-                  item={m}
-                  currentUserId={user?.id}
-                  onDelete={(x) => deleteMessage(x)}
-                  onPreviewImage={(img) => setPreviewImage(img)}
-                  onEdit={(message, newText) => {
-                    try {
-                      if (!chat?.id) return;
-                      socket.emit("edit-message", chat.id, {
-                        ...message,
-                        text: newText,
-                      });
-                    } catch (e) {
-                      console.error(e);
-                    }
-                  }}
-                />
-              ))
-            )}
-            <div ref={messagesEndRef} />
           </div>
-          <AttachmentsBar
-            attachments={attachments}
-            onClearAll={clearAttachments}
-            onRemoveAt={(idx) => removeAttachment(idx)}
-          />
-          <Composer
-            value={message}
-            onChange={setMessage}
-            onSubmit={sendMessage}
-          />
         </div>
+      </div>
+
+      {/* Messages container */}
+      <div className="flex-1 overflow-hidden">
+        <div ref={messagesContainerRef} className="h-full overflow-y-auto">
+          {messages.length < totalMessages && (
+            <div className="text-center text-sm text-gray-400 py-2">
+              {isLoadingPage ? "" : "Scroll up to load more"}
+            </div>
+          )}
+          {isLoadingPage && (
+            <>
+              <SkeletonMessageItem />
+              <SkeletonMessageItem />
+              <SkeletonMessageItem />
+            </>
+          )}
+          {isInitialLoading ? (
+            <>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <SkeletonMessageItem key={`s-${i}`} />
+              ))}
+            </>
+          ) : (
+            [...messages].reverse().map((m) => (
+              <MessageItem
+                key={m.id}
+                item={m}
+                currentUserId={user?.id}
+                onDelete={(x) => deleteMessage(x)}
+                onPreviewImage={(img) => setPreviewImage(img)}
+                onEdit={(message, newText) => {
+                  try {
+                    if (!chat?.id) return;
+                    socket.emit("edit-message", chat.id, {
+                      ...message,
+                      text: newText,
+                    });
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+              />
+            ))
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* Attachments and Composer - fixed at bottom */}
+      <div className="flex-shrink-0 bg-neutral-900">
+        <AttachmentsBar
+          attachments={attachments}
+          onClearAll={clearAttachments}
+          onRemoveAt={(idx) => removeAttachment(idx)}
+        />
+        <Composer
+          value={message}
+          onChange={setMessage}
+          onSubmit={sendMessage}
+        />
       </div>
       {isDragging && (
         <div

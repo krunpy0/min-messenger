@@ -149,6 +149,62 @@ friendsRouter.get(
   }
 );
 
+// Get friend info by ID
+friendsRouter.get(
+  "/:friendId",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    try {
+      const { friendId } = req.params;
+
+      // First check if the user is actually friends with this person
+      const friendship = await prisma.friend.findFirst({
+        where: {
+          userId: friendId,
+          friendId: req.user.id,
+        },
+      });
+
+      if (!friendship) {
+        return sendResponse(
+          res,
+          404,
+          false,
+          "Friend not found or not in your friends list"
+        );
+      }
+
+      // Get friend information
+      const friend = await prisma.user.findUnique({
+        where: { id: friendId },
+        select: {
+          id: true,
+          username: true,
+          name: true,
+          avatarUrl: true,
+          bio: true,
+          birthday: true,
+          createdAt: true,
+        },
+      });
+
+      if (!friend) {
+        return sendResponse(res, 404, false, "User not found");
+      }
+
+      sendResponse(
+        res,
+        200,
+        true,
+        "Friend information retrieved successfully",
+        { user: friend }
+      );
+    } catch (error) {
+      handleError(res, error, "Failed to retrieve friend information");
+    }
+  }
+);
+
 friendsRouter.post(
   "/requests/send/:friendId",
   passport.authenticate("jwt", { session: false }),

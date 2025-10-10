@@ -52,7 +52,7 @@ const HomePage = () => {
   }
 
   return (
-    <div className="h-[100vh] bg-[#1a1a1a] overflow-y-hidden">
+    <div className="h-[100vh] bg-[#1a1a1a]">
       {/* Profile Header */}
       <div className="mt-4">
         <ProfileHeader />
