@@ -125,7 +125,7 @@ export default function MessageItem({
                     <video
                       controls
                       src={file.url}
-                      className="rounded-lg max-w-3xl"
+                      className="rounded-lg max-w-3xl w-[95%]"
                     />
                   </div>
                 ) : (
