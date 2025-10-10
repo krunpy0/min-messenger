@@ -30,7 +30,7 @@ function App() {
         </>
       ) : (
         <>
-          <p>Not logged in</p> <Link to={"/login"}>Log in</Link>
+          <p>Not logged in</p> <Link to={"/auth"}>Log in</Link>
         </>
       )}
       <h1>Hello world</h1>

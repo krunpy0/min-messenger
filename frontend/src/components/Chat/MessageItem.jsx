@@ -117,6 +117,17 @@ export default function MessageItem({
                       }
                     />
                   </div>
+                ) : file.type.startsWith("video/") ||
+                  file.type === "application/mp4" ||
+                  file.type === "application/x-mpegURL" ||
+                  file.type === "application/x-m3u8" ? (
+                  <div className="flex border-gray-700 border-2 rounded-2xl p-4 mt-2 gap-2">
+                    <video
+                      controls
+                      src={file.url}
+                      className="rounded-lg max-w-3xl"
+                    />
+                  </div>
                 ) : (
                   <div className="flex border-gray-700 border-2 rounded-2xl p-4 mt-2 gap-2">
                     <a href={file.url}>{file.name || file.url}</a>
