@@ -79,7 +79,7 @@ const FriendsList = () => {
 
   if (loading) {
     return (
-      <div className="bg-[#242424] border border-[#424242] rounded-lg p-6">
+      <div className="bg-[#242424] border border-[#424242] rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <Users className="w-6 h-6 text-rose-400" />
           <h2 className="text-xl font-semibold text-white">My friends</h2>
@@ -94,7 +94,7 @@ const FriendsList = () => {
 
   if (error) {
     return (
-      <div className="bg-[#242424] border border-[#424242] rounded-lg p-6">
+      <div className="bg-[#242424] border border-[#424242] rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <Users className="w-6 h-6 text-rose-400" />
           <h2 className="text-xl font-semibold text-white">My friends</h2>
@@ -118,7 +118,7 @@ const FriendsList = () => {
   }
 
   return (
-    <div className="bg-[#242424] border border-[#424242] rounded-lg p-6">
+    <div className="bg-[#242424] border border-[#424242] rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <Users className="w-6 h-6 text-rose-400" />

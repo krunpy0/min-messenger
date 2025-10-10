@@ -73,7 +73,7 @@ export default function MessageItem({
                     setEditText(item.text || "");
                   }
                 }}
-                className="w-full rounded-2xl p-2 border-2 border-gray-400"
+                className="w-full rounded-2xl p-2 border-2 border-neutral-400"
                 autoFocus
               />
               <button
@@ -81,7 +81,7 @@ export default function MessageItem({
                   onEdit?.(item, editText);
                   setIsEditing(false);
                 }}
-                className="rounded-2xl px-3 py-2 border-2 border-gray-400 hover:border-gray-600 active:scale-95"
+                className="rounded-2xl px-3 py-2 border-2 border-neutral-400 hover:border-neutral-600 active:scale-95"
               >
                 Ok
               </button>
@@ -90,7 +90,7 @@ export default function MessageItem({
                   setIsEditing(false);
                   setEditText(item.text || "");
                 }}
-                className="text-sm text-gray-400 hover:text-gray-200"
+                className="text-sm text-gray-400 hover:text-neutral-200"
               >
                 Cancel
               </button>
@@ -121,7 +121,7 @@ export default function MessageItem({
                   file.type === "application/mp4" ||
                   file.type === "application/x-mpegURL" ||
                   file.type === "application/x-m3u8" ? (
-                  <div className="flex border-gray-700 border-2 rounded-2xl p-4 mt-2 gap-2">
+                  <div className="flex border-neutral-700 border-2 rounded-2xl p-4 mt-2 gap-2">
                     <video
                       controls
                       src={file.url}
@@ -129,9 +129,11 @@ export default function MessageItem({
                     />
                   </div>
                 ) : (
-                  <div className="flex border-gray-700 border-2 rounded-2xl p-4 mt-2 gap-2">
+                  <div className="flex border-neutral-700 border-2 rounded-2xl p-4 mt-2 gap-2">
                     <a href={file.url}>{file.name || file.url}</a>
-                    <p className="text-xs text-gray-400">{bytes(file.size)}</p>
+                    <p className="text-xs text-neutral-400">
+                      {bytes(file.size)}
+                    </p>
                   </div>
                 )}
               </div>

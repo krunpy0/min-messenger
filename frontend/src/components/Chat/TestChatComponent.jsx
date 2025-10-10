@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { socket } from "../../socket";
-import { useParams } from "react-router-dom";
-import { DivideSquare } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { DivideSquare, ArrowLeft } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import MessageItem from "./MessageItem";
@@ -14,6 +14,7 @@ export default function ChatComponent() {
   const [user, setUser] = useState(null);
   const [chat, setChat] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [friend, setFriend] = useState({});
   const [message, setMessage] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [attachments, setAttachments] = useState([]);
@@ -27,6 +28,7 @@ export default function ChatComponent() {
   const messagesContainerRef = useRef(null);
   const isUserAtBottomRef = useRef(true);
   const dragCounter = useRef(0);
+  const navigate = useNavigate();
   // const [input, setInput] = useState("");
   // const [room, setRoom] = useState("");
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -393,6 +395,7 @@ export default function ChatComponent() {
 
       if (attachments.length > 0) {
         files = await sendAttachment();
+        setAttachments([]);
       }
       socket.emit("send-message", currentChat.id, outgoingMessage, files);
       setMessage("");
@@ -412,8 +415,24 @@ export default function ChatComponent() {
 
   return (
     <div>
-      <div>
-        <h1>Chat</h1>
+      <div className="">
+        <div className="p-2 bg-neutral-900 w-full">
+          <div>
+            <button
+              onClick={(e) => navigate("/")}
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-rose-600
+                     border border-rose-400 text-white rounded-xl font-medium 
+                     hover:rose-600 hover:shadow-lg
+                     active:scale-95 w-full
+                     focus:outline-none
+                     box-border"
+            >
+              <ArrowLeft size={18} />
+              <span>Назад</span>
+            </button>
+          </div>
+          <div>{}</div>
+        </div>
         <div>
           <div
             ref={messagesContainerRef}

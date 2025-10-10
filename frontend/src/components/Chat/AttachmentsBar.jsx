@@ -8,12 +8,12 @@ export default function AttachmentsBar({
   return (
     <div className="px-2">
       <div className="mb-2 flex items-center justify-between">
-        <p className="m-0 text-sm text-gray-400">
+        <p className="m-0 text-sm text-neutral-400">
           Attachments ({attachments.length})
         </p>
         <button
           onClick={onClearAll}
-          className="text-xs text-gray-300 hover:text-white underline"
+          className="text-xs text-neutral-300 hover:text-white underline"
         >
           Clear all
         </button>
@@ -22,18 +22,18 @@ export default function AttachmentsBar({
         {attachments.map((file, idx) => (
           <div
             key={`${file.name}-${file.size}-${file.lastModified}-${idx}`}
-            className="flex items-center gap-2 rounded-lg border border-gray-600 px-2 py-1 bg-neutral-900"
+            className="flex items-center gap-2 rounded-lg border border-[#363636] px-2 py-1 p-2 bg-neutral-900"
           >
             <span
-              className="text-sm text-gray-200 truncate max-w-[16rem]"
+              className="text-sm text-neutral-200 truncate max-w-[16rem]"
               title={`${file.name} (${bytes(file.size)})`}
             >
               {file.name}
             </span>
-            <span className="text-xs text-gray-500">{bytes(file.size)}</span>
+            <span className="text-xs text-neutral-500">{bytes(file.size)}</span>
             <button
               onClick={() => onRemoveAt(idx)}
-              className="text-gray-400 hover:text-white text-sm"
+              className="text-neutral-400 hover:text-white text-sm"
             >
               ×
             </button>
