@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import "react-toastify/dist/ReactToastify.css";
 import App from "./components/App/App.jsx";
+import HomePage from "./components/Home/HomePage.jsx";
 import { Login } from "./components/Login/Login.jsx";
 import { SignUp } from "./components/SignUp/SignUp.jsx";
 import TestChatComponent from "./components/Chat/TestChatComponent.jsx";
@@ -12,10 +13,12 @@ import { Logout } from "./components/Logout/Logout.jsx";
 import { FriendRequests } from "./components/FriendRequests/FriendRequests.jsx";
 import { Auth } from "./components/Auth/Auth.jsx";
 import { CustomizeProfile } from "./components/CustomizeProfile/CustomizeProfile.jsx";
+import { UserAgreement } from "./components/TOS/UserAgreement.jsx";
+import { TermsOfService } from "./components/TOS/TermsOfService.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />,
+    element: <HomePage />,
   },
   {
     path: "/login",
@@ -48,6 +51,14 @@ const router = createBrowserRouter([
   {
     path: "/customize",
     element: <CustomizeProfile />,
+  },
+  {
+    path: "/user-agreement",
+    element: <UserAgreement />,
+  },
+  {
+    path: "/terms-of-service",
+    element: <TermsOfService />,
   },
 ]);
 createRoot(document.getElementById("root")).render(

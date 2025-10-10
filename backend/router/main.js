@@ -18,7 +18,7 @@ mainRouter.use("/user", userRouter);
 mainRouter.use("/friends", friendsRouter);
 mainRouter.use("/chats", chatsRouter);
 mainRouter.use("/files", filesRouter);
-mainRouter.get("/logout", (req, res) => {
+mainRouter.post("/logout", (req, res) => {
   res.clearCookie("token");
   res.json({ message: "Successfully logged out" });
 });

@@ -5,5 +5,5 @@ const URL = "http://localhost:8080";
 
 export const socket = io(URL, {
   withCredentials: true,
-  autoConnect: false
+  autoConnect: false,
 });

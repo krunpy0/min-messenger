@@ -55,6 +55,7 @@ meRouter.get(
       select: {
         id: true,
         username: true,
+        name: true,
         birthday: true,
         bio: true,
         avatarUrl: true,
