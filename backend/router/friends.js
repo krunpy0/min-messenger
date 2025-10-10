@@ -8,23 +8,32 @@ const sendResponse = (res, statusCode, success, message, data = null) => {
   const response = {
     success,
     message,
-    ...(data && { data })
+    ...(data && { data }),
   };
   return res.status(statusCode).json(response);
 };
 
 // Error handler helper
-const handleError = (res, error, defaultMessage = "Unexpected server error") => {
+const handleError = (
+  res,
+  error,
+  defaultMessage = "Unexpected server error"
+) => {
   console.error("Friends API Error:", error);
-  
+
   // Handle specific Prisma errors
-  if (error.code === 'P2002') {
-    return sendResponse(res, 409, false, "A record with this data already exists");
+  if (error.code === "P2002") {
+    return sendResponse(
+      res,
+      409,
+      false,
+      "A record with this data already exists"
+    );
   }
-  if (error.code === 'P2025') {
+  if (error.code === "P2025") {
     return sendResponse(res, 404, false, "Record not found");
   }
-  
+
   return sendResponse(res, 500, false, defaultMessage);
 };
 
@@ -42,18 +51,28 @@ friendsRouter.get(
                 select: {
                   id: true,
                   username: true,
-                }
-              }
-            }
+                  avatarUrl: true,
+                  bio: true,
+                  birthday: true,
+                  name: true,
+                },
+              },
+            },
           },
         },
       });
-      
+
       if (!friends) {
         return sendResponse(res, 404, false, "User not found");
       }
-      
-      sendResponse(res, 200, true, "Friends retrieved successfully", friends.friends);
+
+      sendResponse(
+        res,
+        200,
+        true,
+        "Friends retrieved successfully",
+        friends.friends
+      );
     } catch (error) {
       handleError(res, error, "Failed to retrieve friends list");
     }
@@ -72,22 +91,33 @@ friendsRouter.get(
             select: {
               id: true,
               username: true,
+              avatarUrl: true,
+              bio: true,
+              birthday: true,
+              name: true,
             },
           },
         },
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: "desc",
+        },
       });
-      
-      sendResponse(res, 200, true, "Received friend requests retrieved successfully", requests);
+
+      sendResponse(
+        res,
+        200,
+        true,
+        "Received friend requests retrieved successfully",
+        requests
+      );
     } catch (error) {
       handleError(res, error, "Failed to retrieve received friend requests");
     }
   }
 );
 
-friendsRouter.get("/requests/sent",
+friendsRouter.get(
+  "/requests/sent",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
     try {
@@ -102,17 +132,22 @@ friendsRouter.get("/requests/sent",
           },
         },
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: "desc",
+        },
       });
-      
-      sendResponse(res, 200, true, "Sent friend requests retrieved successfully", requests);
+
+      sendResponse(
+        res,
+        200,
+        true,
+        "Sent friend requests retrieved successfully",
+        requests
+      );
     } catch (error) {
       handleError(res, error, "Failed to retrieve sent friend requests");
     }
   }
 );
-
 
 friendsRouter.post(
   "/requests/send/:friendId",
@@ -121,18 +156,23 @@ friendsRouter.post(
     const { friendId } = req.params;
     try {
       if (friendId === req.user.id) {
-        return sendResponse(res, 400, false, "You cannot send a friend request to yourself");
+        return sendResponse(
+          res,
+          400,
+          false,
+          "You cannot send a friend request to yourself"
+        );
       }
-      
+
       const user = await prisma.user.findUnique({
         where: { id: friendId },
-        select: { id: true, username: true }
+        select: { id: true, username: true },
       });
-      
+
       if (!user) {
         return sendResponse(res, 404, false, "User not found");
       }
-      
+
       const existingFriendship = await prisma.friend.findFirst({
         where: {
           OR: [
@@ -141,9 +181,14 @@ friendsRouter.post(
           ],
         },
       });
-      
+
       if (existingFriendship) {
-        return sendResponse(res, 409, false, `You are already friends with ${user.username}`);
+        return sendResponse(
+          res,
+          409,
+          false,
+          `You are already friends with ${user.username}`
+        );
       }
 
       const existingRequest = await prisma.friendRequest.findFirst({
@@ -154,9 +199,14 @@ friendsRouter.post(
           ],
         },
       });
-      
+
       if (existingRequest) {
-        return sendResponse(res, 409, false, "A friend request already exists between you and this user");
+        return sendResponse(
+          res,
+          409,
+          false,
+          "A friend request already exists between you and this user"
+        );
       }
 
       const friendRequest = await prisma.friendRequest.create({
@@ -174,8 +224,14 @@ friendsRouter.post(
           },
         },
       });
-      
-      sendResponse(res, 201, true, `Friend request sent to ${user.username}`, friendRequest);
+
+      sendResponse(
+        res,
+        201,
+        true,
+        `Friend request sent to ${user.username}`,
+        friendRequest
+      );
     } catch (error) {
       handleError(res, error, "Failed to send friend request");
     }
@@ -203,9 +259,14 @@ friendsRouter.put(
           },
         },
       });
-      
+
       if (!friendRequest) {
-        return sendResponse(res, 404, false, "Friend request not found or you don't have permission to accept it");
+        return sendResponse(
+          res,
+          404,
+          false,
+          "Friend request not found or you don't have permission to accept it"
+        );
       }
 
       await prisma.$transaction(async (tx) => {
@@ -227,8 +288,13 @@ friendsRouter.put(
           ],
         });
       });
-      
-      sendResponse(res, 200, true, `Friend request from ${friendRequest.fromUser.username} accepted successfully`);
+
+      sendResponse(
+        res,
+        200,
+        true,
+        `Friend request from ${friendRequest.fromUser.username} accepted successfully`
+      );
     } catch (error) {
       handleError(res, error, "Failed to accept friend request");
     }
@@ -256,17 +322,27 @@ friendsRouter.put(
           },
         },
       });
-      
+
       if (!friendRequest) {
-        return sendResponse(res, 404, false, "Friend request not found or you don't have permission to decline it");
+        return sendResponse(
+          res,
+          404,
+          false,
+          "Friend request not found or you don't have permission to decline it"
+        );
       }
 
       await prisma.friendRequest.update({
         where: { id: friendRequest.id },
         data: { status: "declined" },
       });
-      
-      sendResponse(res, 200, true, `Friend request from ${friendRequest.fromUser.username} declined successfully`);
+
+      sendResponse(
+        res,
+        200,
+        true,
+        `Friend request from ${friendRequest.fromUser.username} declined successfully`
+      );
     } catch (error) {
       handleError(res, error, "Failed to decline friend request");
     }
@@ -280,9 +356,14 @@ friendsRouter.delete(
     const { friendId } = req.params;
     try {
       if (friendId === req.user.id) {
-        return sendResponse(res, 400, false, "You cannot remove yourself as a friend");
+        return sendResponse(
+          res,
+          400,
+          false,
+          "You cannot remove yourself as a friend"
+        );
       }
-      
+
       const friendship = await prisma.friend.findFirst({
         where: {
           userId: req.user.id,
@@ -297,7 +378,7 @@ friendsRouter.delete(
           },
         },
       });
-      
+
       if (!friendship) {
         return sendResponse(res, 404, false, "Friendship not found");
       }
@@ -312,7 +393,7 @@ friendsRouter.delete(
             ],
           },
         });
-        
+
         // Remove any related friend requests
         await tx.friendRequest.deleteMany({
           where: {
@@ -323,14 +404,17 @@ friendsRouter.delete(
           },
         });
       });
-      
-      sendResponse(res, 200, true, `Successfully removed ${friendship.friend.username} from friends`);
+
+      sendResponse(
+        res,
+        200,
+        true,
+        `Successfully removed ${friendship.friend.username} from friends`
+      );
     } catch (error) {
       handleError(res, error, "Failed to remove friend");
     }
   }
 );
-
-
 
 module.exports = friendsRouter;

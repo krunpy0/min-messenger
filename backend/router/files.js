@@ -66,16 +66,15 @@ filesRouter.post(
   passport.authenticate("jwt", { session: false }),
   upload.single("file"),
   async (req, res) => {
-    const files = req.files.map((f) => {
-      const cdnUrl = f.location.replace(
-        "https://storage.yandexcloud.net/krunpy-main",
-        "https://cdn.krunpy.ru"
-      );
-      return {
-        url: cdnUrl,
-        name: f.originalname,
-        size: f.size,
-      };
+    const f = req.file;
+    const cdnUrl = f.location.replace(
+      "https://storage.yandexcloud.net/krunpy-main",
+      "https://cdn.krunpy.ru"
+    );
+    return res.status(201).json({
+      url: cdnUrl,
+      name: f.originalname,
+      size: f.size,
     });
   }
 );

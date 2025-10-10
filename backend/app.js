@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 const { instrument } = require("@socket.io/admin-ui");
 const mime = require("mime-types");
 const { S3Client, DeleteObjectCommand } = require("@aws-sdk/client-s3");
-//require("dotenv").config();
+require("dotenv").config();
 
 const app = express();
 app.use(express.json());

@@ -1,3 +1,4 @@
+import { Loader2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
@@ -7,6 +8,7 @@ export function Auth() {
   const [isLogin, setIsLogin] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   async function checkAuth() {
     const res = await fetch(`${API_BASE_URL}/api/me`, {
@@ -22,6 +24,7 @@ export function Auth() {
   }, []);
 
   async function logIn() {
+    setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/login`, {
         method: "POST",
@@ -40,9 +43,11 @@ export function Auth() {
       console.log(err);
       toast.error(err.message);
     }
+    setLoading(false);
   }
 
   async function signIn() {
+    setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/sign-up`, {
         method: "POST",
@@ -61,6 +66,7 @@ export function Auth() {
       console.log(err);
       toast.error(err.message);
     }
+    setLoading(false);
   }
 
   return (
@@ -105,10 +111,13 @@ export function Auth() {
           />
         </div>
         <button
-          className="bg-rose-500 border border-rose-400 text-white rounded-md font-semibold p-2 hover:bg-[#ff4766] active:scale-95 cursor-pointer"
+          className="bg-rose-500 border border-rose-400 text-white rounded-md font-semibold p-2 hover:bg-[#ff4766] flex gap-4 justify-center
+          active:scale-95 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           type="submit"
+          disabled={loading}
         >
           Continue
+          {loading && <Loader2Icon className="animate-spin" />}
         </button>
       </form>
       <p className="text-sm text-gray-500">

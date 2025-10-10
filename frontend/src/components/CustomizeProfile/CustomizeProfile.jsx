@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { LoaderCircleIcon } from "lucide-react";
+import Cropper from "react-easy-crop";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-
+import dayjs from "dayjs";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export function CustomizeProfile() {
@@ -24,21 +26,39 @@ export function CustomizeProfile() {
   const [searchParams] = useSearchParams();
   const referrer = searchParams.get("referrer");
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [newAvatarFile, setNewAvatarFile] = useState(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   console.log(referrer);
 
   async function getUser() {
+    setApplying(true);
     const res = await fetch(`${API_BASE_URL}/api/me/extended`, {
       credentials: "include",
     });
     const data = await res.json();
     if (data.user) {
       setUser(data.user);
+      // const date = new Date(user.birthday);
+      // const stringbd = new Date(
+      // date.getTime() - date.getTimezoneOffset() * 60000
+      // )
+      // .toISOString()
+      // .split("T")[0];
+
+      // setUser({ ...user, birthday: stringbd });
     } else {
       navigate("/auth");
     }
+    setApplying(false);
   }
 
   async function handleApply() {
+    setApplying(true);
     const res = await fetch(`${API_BASE_URL}/api/me`, {
       method: "PUT",
       headers: {
@@ -59,27 +79,123 @@ export function CustomizeProfile() {
     } else {
       toast.error(data.message);
     }
+    setApplying(false);
   }
 
-  async function handleAvatarChange(e) {
-    const file = e.target.files[0];
+  function handleAvatarChange(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!file.type || !file.type.startsWith("image/")) {
+      toast.error("Пожалуйста, выберите файл изображения.");
+      return;
+    }
+    setNewAvatarFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreviewUrl(previewUrl);
+  }
+
+  function createImage(url) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.addEventListener("load", () => resolve(image));
+      image.addEventListener("error", (error) => reject(error));
+      image.setAttribute("crossOrigin", "anonymous");
+      image.src = url;
+    });
+  }
+
+  async function getCroppedBlob(imageSrc, pixelCrop, mimeType = "image/jpeg") {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const targetSize = Math.max(pixelCrop.width, pixelCrop.height);
+    canvas.width = targetSize;
+    canvas.height = targetSize;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      targetSize,
+      targetSize
+    );
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          resolve(blob);
+        },
+        mimeType,
+        0.9
+      );
+    });
+  }
+
+  async function handleApplyNewAvatar() {
+    setUploadingAvatar(true);
+    if (!newAvatarFile) {
+      setIsEditingAvatar(false);
+      return;
+    }
+    if (!newAvatarFile.type || !newAvatarFile.type.startsWith("image/")) {
+      toast.error("Поддерживаются только изображения.");
+      return;
+    }
+    let blobToUpload = null;
+    try {
+      if (avatarPreviewUrl && croppedAreaPixels) {
+        const blob = await getCroppedBlob(
+          avatarPreviewUrl,
+          croppedAreaPixels,
+          "image/jpeg"
+        );
+        blobToUpload = blob;
+      }
+    } catch (e) {
+      // fallback to original file if cropping fails
+      blobToUpload = newAvatarFile;
+    }
+    if (!blobToUpload) blobToUpload = newAvatarFile;
+
+    const filename =
+      newAvatarFile && newAvatarFile.name ? newAvatarFile.name : "avatar.jpg";
+    const fileForUpload =
+      blobToUpload instanceof Blob && !(blobToUpload instanceof File)
+        ? new File([blobToUpload], filename, {
+            type: blobToUpload.type || "image/jpeg",
+          })
+        : blobToUpload;
+
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", fileForUpload);
     const res = await fetch(`${API_BASE_URL}/api/files/cdn`, {
       method: "POST",
       body: formData,
       credentials: "include",
     });
     const data = await res.json();
-    console.log(data);
-    setUser({ ...user, avatarUrl: data.url });
+    if (res.ok && data?.url) {
+      setUser({ ...user, avatarUrl: data.url });
+    } else {
+      toast.error(data?.message || "Failed to upload avatar");
+    }
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    setAvatarPreviewUrl(null);
+    setNewAvatarFile(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
     setIsEditingAvatar(false);
+    setUploadingAvatar(false);
   }
 
   useEffect(() => {
     getUser();
   }, []);
-
+  console.log(newAvatarFile);
   return (
     <div className="flex flex-col items-center justify-center h-screen gap-2 w-full">
       <h1 className="text-4xl font-semibold mb-2">Customize Profile</h1>
@@ -161,15 +277,33 @@ export function CustomizeProfile() {
               name="birthday"
               id="birthday"
               className="bg-[#202020] border border-[#363636] rounded-md p-2"
-              value={user.birthday}
+              value={dayjs(user.birthday).format("YYYY-MM-DD")}
               onChange={(e) => setUser({ ...user, birthday: e.target.value })}
             />
           </div>
           <div>
-            <button className="w-full bg-rose-500 border border-rose-400 rounded-lg p-2 font-semibold hover:bg-rose-600 active:scale-95">
-              Apply
+            <button
+              type="submit"
+              className="w-full bg-rose-500 border border-rose-400 rounded-lg p-2 font-semibold hover:bg-rose-600
+              flex justify-center gap-4
+            active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={applying}
+            >
+              Apply {applying && <LoaderCircleIcon className="animate-spin" />}
             </button>
           </div>
+          {!referrer && (
+            <div>
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="w-full bg-neutral-750 border border-neutral-600 rounded-lg p-2 font-semibold hover:bg-neutral-600
+                flex justify-center gap-4"
+              >
+                Back
+              </button>
+            </div>
+          )}
         </form>
       </div>
       <ToastContainer
@@ -181,23 +315,81 @@ export function CustomizeProfile() {
         rtl={false}
       />
       {isEditingAvatar && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-neutral-900 rounded-md p-4 flex flex-col gap-2">
+        <div
+          className="fixed inset-0  bg-opacity-10 flex items-center z-50
+        justify-center w-full border border-[#363636] bg-[#242424] rounded-md h-full  mx-auto"
+        >
+          <div className="bg-neutral-900 p-4 flex flex-col gap-3 border border-[#363636] rounded-md">
             <h1 className="text-2xl font-bold">Edit Avatar</h1>
+            {avatarPreviewUrl && (
+              <div className="relative w-[300px] h-[300px] bg-black self-center rounded-md overflow-hidden">
+                <Cropper
+                  image={avatarPreviewUrl}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={(area, areaPixels) =>
+                    setCroppedAreaPixels(areaPixels)
+                  }
+                  cropShape="round"
+                  showGrid={false}
+                />
+              </div>
+            )}
+            <label htmlFor="avatar-input" className="cursor-pointer">
+              <button
+                className=" w-full bg-[#202020] border border-[#363636] rounded-md p-2 hover:bg-[#363636] active:scale-95 cursor-pointer"
+                onClick={() => document.getElementById("avatar-input").click()}
+              >
+                Select avatar
+              </button>
+            </label>
             <input
               type="file"
               onChange={handleAvatarChange}
-              className="bg-[#202020] border border-[#363636] rounded-md p-2"
+              accept="image/*"
+              className="hidden"
+              id="avatar-input"
             />
+            {avatarPreviewUrl && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-neutral-400">Zoom</label>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-[200px]"
+                />
+              </div>
+            )}
             <button
-              onClick={() => setIsEditingAvatar(false)}
-              className="bg-[#202020] border border-[#363636] rounded-md p-2"
+              onClick={handleApplyNewAvatar}
+              disabled={
+                !avatarPreviewUrl || !croppedAreaPixels || uploadingAvatar
+              }
+              className="w-full flex justify-center gap-3 bg-rose-500 border border-rose-400 rounded-lg p-2 font-semibold hover:bg-rose-600
+              active:scale-95
+              disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Apply
+              {uploadingAvatar && <LoaderCircleIcon className="animate-spin" />}
             </button>
             <button
-              onClick={() => setIsEditingAvatar(false)}
-              className="bg-[#202020] border border-[#363636] rounded-md p-2"
+              onClick={() => {
+                if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+                setAvatarPreviewUrl(null);
+                setNewAvatarFile(null);
+                setCrop({ x: 0, y: 0 });
+                setZoom(1);
+                setCroppedAreaPixels(null);
+                setIsEditingAvatar(false);
+              }}
+              className="bg-[#202020] border border-[#363636] rounded-md p-2 hover:bg-[#363636] active:scale-95 cursor-pointer"
             >
               Cancel
             </button>
