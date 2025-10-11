@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { LoaderCircleIcon } from "lucide-react";
+import { LoaderCircleIcon, Pen } from "lucide-react";
 import Cropper from "react-easy-crop";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
@@ -198,7 +198,11 @@ export function CustomizeProfile() {
   console.log(newAvatarFile);
   return (
     <div className="flex flex-col items-center justify-center h-screen gap-2 w-full">
-      <h1 className="text-4xl font-semibold mb-2">Customize Profile</h1>
+      <title>Customize profile</title>
+      <h1 className="text-4xl font-semibold mb-2 flex items-center justify-center gap-2">
+        <Pen className="text-rose-500" size={"36px"} />
+        Customize Profile
+      </h1>
       <div className="max-w-[700px] w-full bg-[#242424] border border-[#424242] rounded-xl flex md:flex-row flex-col p-15 gap-10">
         <div className="flex flex-col gap-4">
           <div className="w-[200px] h-[200px] bg-neutral-900 rounded-full relative group">

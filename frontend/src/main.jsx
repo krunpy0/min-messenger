@@ -9,12 +9,8 @@ import { SignUp } from "./components/SignUp/SignUp.jsx";
 import ChatComponent from "./components/Chat/ChatComponent.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import FriendsPage from "./components/Friends/FriendsPage.jsx";
-import { Logout } from "./components/Logout/Logout.jsx";
-import { FriendRequests } from "./components/FriendRequests/FriendRequests.jsx";
 import { Auth } from "./components/Auth/Auth.jsx";
 import { CustomizeProfile } from "./components/CustomizeProfile/CustomizeProfile.jsx";
-import { UserAgreement } from "./components/TOS/UserAgreement.jsx";
-import { TermsOfService } from "./components/TOS/TermsOfService.jsx";
 const router = createBrowserRouter([
   {
     path: "/",

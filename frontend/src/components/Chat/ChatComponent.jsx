@@ -444,6 +444,7 @@ export default function ChatComponent() {
 
   return (
     <div className="h-screen-safe flex flex-col bg-neutral-900">
+      <title>{friend ? friend.name || friend.username : "Chat"}</title>
       {/* Header with back button and friend info */}
       <div className="flex items-center gap-3 p-3 pt-safe border border-neutral-700 bg-neutral-900 flex-shrink-0 mt-2 rounded-2xl w-[95%] md:w-[99%] mx-auto">
         <button
