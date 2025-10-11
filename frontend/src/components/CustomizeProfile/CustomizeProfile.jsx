@@ -67,7 +67,7 @@ export function CustomizeProfile() {
       credentials: "include",
       body: JSON.stringify({
         ...user,
-        birthday: new Date(user.birthday).toISOString(),
+        birthday: user.birthday ? new Date(user.birthday).toISOString() : null,
       }),
     });
     const data = await res.json();
@@ -270,15 +270,19 @@ export function CustomizeProfile() {
           </div>
           <div className="flex flex-col gap-2">
             <label htmlFor="birthday" className="text-[#C5C5C5] font-medium">
-              Дата рождения (optional)
+              Birthday (optional)
             </label>
             <input
               type="date"
               name="birthday"
               id="birthday"
               className="bg-[#202020] border border-[#363636] rounded-md p-2"
-              value={dayjs(user.birthday).format("YYYY-MM-DD")}
-              onChange={(e) => setUser({ ...user, birthday: e.target.value })}
+              value={
+                user.birthday ? dayjs(user.birthday).format("YYYY-MM-DD") : ""
+              }
+              onChange={(e) =>
+                setUser({ ...user, birthday: e.target.value || null })
+              }
             />
           </div>
           <div>

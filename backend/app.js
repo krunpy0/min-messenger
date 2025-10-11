@@ -110,59 +110,69 @@ async function createMessage(cookieHeader, chatId, text, files) {
   }
 }
 async function deleteMessage(cookieHeader, chatId, message) {
-  console.log(`deleting message ${message}`);
-  const cookies = Object.fromEntries(
-    cookieHeader?.split("; ").map((c) => c.split("="))
-  );
-  const token = cookies?.token;
-  if (!token) throw new Error("No token provided");
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  console.log(decoded);
-  const userId = decoded.id;
-  console.log(`user trying to delete: ${userId}, ${message.userId}`);
+  try {
+    console.log(`deleting message ${message}`);
+    const cookies = Object.fromEntries(
+      cookieHeader?.split("; ").map((c) => c.split("="))
+    );
+    const token = cookies?.token;
+    if (!token) throw new Error("No token provided");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log(decoded);
+    const userId = decoded.id;
+    console.log(`user trying to delete: ${userId}, ${message.userId}`);
 
-  if (userId !== message.userId)
-    throw new Error("You are not allowed to delete this message");
+    if (userId !== message.userId)
+      throw new Error("You are not allowed to delete this message");
 
-  const deletedMessage = await prisma.message.update({
-    where: { id: message.id, chatId: chatId },
-    data: { deleted: true },
-    include: { files: true },
-  });
+    const deletedMessage = await prisma.message.update({
+      where: { id: message.id, chatId: chatId },
+      data: { deleted: true },
+      include: { files: true },
+    });
 
-  Promise.all(message.files.map((file) => deleteFileFromBucket(file)));
-  return deletedMessage;
+    Promise.all(message.files.map((file) => deleteFileFromBucket(file)));
+    return deletedMessage;
+  } catch (err) {
+    console.log("Error in deleteMessage:", err);
+    return null;
+  }
 }
 
 async function editMessage(cookieHeader, chatId, message, newText) {
-  const cookies = Object.fromEntries(
-    cookieHeader?.split("; ").map((c) => c.split("="))
-  );
-  const token = cookies?.token;
-  if (!token) throw new Error("No token provided");
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  // console.log(decoded);
-  const userId = decoded.id;
-  // console.log(userId);
-  console.log(message, newText);
-  if (userId !== message.userId)
-    throw new Error("You are not allowed to delete this message");
+  try {
+    const cookies = Object.fromEntries(
+      cookieHeader?.split("; ").map((c) => c.split("="))
+    );
+    const token = cookies?.token;
+    if (!token) throw new Error("No token provided");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // console.log(decoded);
+    const userId = decoded.id;
+    // console.log(userId);
+    console.log(message, newText);
+    if (userId !== message.userId)
+      throw new Error("You are not allowed to edit this message");
 
-  const editedMessage = await prisma.message.update({
-    where: { id: message.id, chatId: chatId },
-    data: { text: message.text },
-    include: {
-      user: {
-        select: {
-          id: true,
-          username: true,
-          avatarUrl: true,
+    const editedMessage = await prisma.message.update({
+      where: { id: message.id, chatId: chatId },
+      data: { text: newText },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          },
         },
+        files: true,
       },
-      files: true,
-    },
-  });
-  return editedMessage;
+    });
+    return editedMessage;
+  } catch (err) {
+    console.log("Error in editMessage:", err);
+    return null;
+  }
 }
 
 async function deleteFileFromBucket(file) {
@@ -197,46 +207,73 @@ async function deleteFileFromBucket(file) {
 io.on("connection", async (socket) => {
   console.log(socket.id);
   socket.on("send-message", async (room, message, files = []) => {
-    console.log(message);
-    console.log(socket.handshake.headers.cookie);
-    const newMessage = await createMessage(
-      socket.handshake.headers.cookie,
-      room,
-      message,
-      files
-    );
-    console.log(newMessage);
-    if (!room) {
-      io.emit("receive-message", newMessage);
-    } else {
-      console.log(`sending message to ${room}`);
-      io.to(room).emit("receive-message", newMessage);
+    try {
+      console.log(message);
+      console.log(socket.handshake.headers.cookie);
+      const newMessage = await createMessage(
+        socket.handshake.headers.cookie,
+        room,
+        message,
+        files
+      );
+      console.log(newMessage);
+      if (newMessage) {
+        if (!room) {
+          io.emit("receive-message", newMessage);
+        } else {
+          console.log(`sending message to ${room}`);
+          io.to(room).emit("receive-message", newMessage);
+        }
+      } else {
+        socket.emit("error", { message: "Failed to create message" });
+      }
+    } catch (err) {
+      console.log("Error in send-message:", err);
+      socket.emit("error", { message: "Failed to send message" });
     }
   });
 
   socket.on("delete-message", async (room, message) => {
-    console.log(message);
-    console.log(socket.handshake.headers.cookie);
-    const deletedMessage = await deleteMessage(
-      socket.handshake.headers.cookie,
-      room,
-      message
-    );
-    console.log(deletedMessage);
-    console.log(`deleted message from ${room}`);
-    io.to(room).emit("deleted-message", deletedMessage);
+    try {
+      console.log(message);
+      console.log(socket.handshake.headers.cookie);
+      const deletedMessage = await deleteMessage(
+        socket.handshake.headers.cookie,
+        room,
+        message
+      );
+      console.log(deletedMessage);
+      if (deletedMessage) {
+        console.log(`deleted message from ${room}`);
+        io.to(room).emit("deleted-message", deletedMessage);
+      } else {
+        socket.emit("error", { message: "Failed to delete message" });
+      }
+    } catch (err) {
+      console.log("Error in delete-message:", err);
+      socket.emit("error", { message: "Failed to delete message" });
+    }
   });
 
   socket.on("edit-message", async (room, message, newText) => {
-    console.log(`editing message`);
-    const editedMessage = await editMessage(
-      socket.handshake.headers.cookie,
-      room,
-      message,
-      newText
-    );
-    console.log(editedMessage);
-    io.to(room).emit("edited-message", editedMessage);
+    try {
+      console.log(`editing message`);
+      const editedMessage = await editMessage(
+        socket.handshake.headers.cookie,
+        room,
+        message,
+        newText
+      );
+      console.log(editedMessage);
+      if (editedMessage) {
+        io.to(room).emit("edited-message", editedMessage);
+      } else {
+        socket.emit("error", { message: "Failed to edit message" });
+      }
+    } catch (err) {
+      console.log("Error in edit-message:", err);
+      socket.emit("error", { message: "Failed to edit message" });
+    }
   });
 
   socket.on("join-room", (room) => {
@@ -246,6 +283,27 @@ io.on("connection", async (socket) => {
 });
 
 instrument(io, { auth: false });
+
+// Global error handler middleware
+app.use((err, req, res, next) => {
+  console.error("Global error handler:", err);
+  res.status(500).json({
+    success: false,
+    message: "Internal server error",
+  });
+});
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  process.exit(1);
+});
 
 app.listen(process.env.PORT, () => {
   console.log(`server is running at http://localhost:${process.env.PORT}`);
