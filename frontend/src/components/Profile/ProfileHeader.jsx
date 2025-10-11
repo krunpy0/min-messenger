@@ -81,7 +81,7 @@ const ProfileHeader = ({ onProfileClick }) => {
 
   return (
     <div className="">
-      <div className="max-w-[1120px] w-[97vw] mx-auto flex items-center justify-between bg-[#202020] border border-[#363636] rounded-2xl p-4">
+      <div className="max-w-[1120px] w-full mx-auto flex items-center justify-between bg-[#202020] border border-[#363636] rounded-2xl p-4">
         <button
           onClick={() => onProfileClick?.(user, true)}
           className="flex items-center gap-3 hover:bg-[#2a2a2a] rounded-lg p-2 transition-colors group w-full text-left"

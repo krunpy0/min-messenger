@@ -66,30 +66,27 @@ const HomePage = () => {
   }
 
   return (
-    <div className="h-[100vh] bg-[#1a1a1a]">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid gap-8 lg:grid-cols-2">
+    <div className="min-h-[100vh] bg-[#1a1a1a]">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-2">
           {/* Profile Header */}
           <div className="lg:col-span-2">
             <ProfileHeader onProfileClick={handleProfileClick} />
           </div>
           {/* Main Content */}
-
           {/* Left Column - Add Friend */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <AddFriendCard />
             <div>
               <FriendRequests onProfileClick={handleProfileClick} />
             </div>
           </div>
-
           {/* Right Column - Friends List */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <FriendsList onProfileClick={handleProfileClick} />
           </div>
         </div>
       </div>
-
       {/* Profile Popup */}
       {selectedProfile && (
         <ProfileCard
