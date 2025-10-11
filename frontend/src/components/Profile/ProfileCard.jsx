@@ -99,7 +99,6 @@ const ProfileCard = ({ user, onClose, isOwnProfile = false }) => {
         {user?.bio && (
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
-              <User className="w-4 h-4 text-rose-400" />
               <span className="text-sm font-medium text-neutral-300">Bio</span>
             </div>
             <p className="text-neutral-400 bg-[#1a1a1a] border border-[#363636] rounded-lg p-3">
@@ -108,26 +107,10 @@ const ProfileCard = ({ user, onClose, isOwnProfile = false }) => {
           </div>
         )}
 
-        {/* Email */}
-        {user?.email && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Mail className="w-4 h-4 text-rose-400" />
-              <span className="text-sm font-medium text-neutral-300">
-                Email
-              </span>
-            </div>
-            <p className="text-neutral-400 bg-[#1a1a1a] border border-[#363636] rounded-lg p-3">
-              {user.email}
-            </p>
-          </div>
-        )}
-
         {/* Birthday */}
         {formattedBirthday && (
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-4 h-4 text-rose-400" />
               <span className="text-sm font-medium text-neutral-300">
                 Birthday
               </span>
@@ -142,7 +125,6 @@ const ProfileCard = ({ user, onClose, isOwnProfile = false }) => {
         {formattedRegistration && (
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-4 h-4 text-rose-400" />
               <span className="text-sm font-medium text-neutral-300">
                 Registered
               </span>
