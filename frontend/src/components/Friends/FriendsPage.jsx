@@ -115,7 +115,7 @@ const FriendsPage = () => {
       <div className="min-h-screen flex items-center justify-center w-full">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-rose-400 animate-spin mx-auto mb-4" />
-          <p className="text-neutral-400">Загружаем список друзей...</p>
+          <p className="text-neutral-400">Loading friends...</p>
         </div>
       </div>
     );
@@ -126,7 +126,7 @@ const FriendsPage = () => {
       <div className="min-h-screen flex items-center justify-center w-full px-4">
         <div className="max-w-sm w-full bg-[#242424] border border-[#424242] rounded-md p-6 text-center">
           <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Ошибка загрузки</h2>
+          <h2 className="text-xl font-semibold mb-2">Error loading</h2>
           <p className="text-neutral-400 mb-6">{error}</p>
           <button
             onClick={handleRefresh}
@@ -147,7 +147,7 @@ const FriendsPage = () => {
           <div className="flex items-center justify-between py-6">
             <div className="flex items-center gap-3">
               <Users className="w-8 h-8 text-rose-400" />
-              <h1 className="text-2xl font-bold">Мои друзья</h1>
+              <h1 className="text-2xl font-bold">My friends</h1>
             </div>
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-full text-sm font-medium bg-[#202020] border border-[#363636] text-neutral-300">
