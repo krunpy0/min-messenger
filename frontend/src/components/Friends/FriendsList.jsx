@@ -152,7 +152,7 @@ const FriendsList = ({ onProfileClick }) => {
           <p className="text-neutral-500">Nobody here but chickens!</p>
         </div>
       ) : (
-        <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(200px,1fr))]">
+        <div className="grid gap-4 grid-cols-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-[#525252] scrollbar-track-transparent">
           {friends.map((friendship) => {
             const friend = friendship.friend;
             return (

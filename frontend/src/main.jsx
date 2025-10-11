@@ -6,7 +6,7 @@ import App from "./components/App/App.jsx";
 import HomePage from "./components/Home/HomePage.jsx";
 import { Login } from "./components/Login/Login.jsx";
 import { SignUp } from "./components/SignUp/SignUp.jsx";
-import TestChatComponent from "./components/Chat/TestChatComponent.jsx";
+import ChatComponent from "./components/Chat/ChatComponent.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import FriendsPage from "./components/Friends/FriendsPage.jsx";
 import { Logout } from "./components/Logout/Logout.jsx";
@@ -30,19 +30,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/chat/:room?",
-    element: <TestChatComponent />,
-  },
-  {
-    path: "/friends",
-    element: <FriendsPage />,
-  },
-  {
-    path: "/friends/requests",
-    element: <FriendRequests />,
-  },
-  {
-    path: "/logout",
-    element: <Logout />,
+    element: <ChatComponent />,
   },
   {
     path: "/auth",
@@ -51,14 +39,6 @@ const router = createBrowserRouter([
   {
     path: "/customize",
     element: <CustomizeProfile />,
-  },
-  {
-    path: "/user-agreement",
-    element: <UserAgreement />,
-  },
-  {
-    path: "/terms-of-service",
-    element: <TermsOfService />,
   },
 ]);
 createRoot(document.getElementById("root")).render(
