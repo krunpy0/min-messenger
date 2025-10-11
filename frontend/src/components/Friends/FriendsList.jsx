@@ -10,7 +10,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-const FriendsList = () => {
+const FriendsList = ({ onProfileClick }) => {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -147,7 +147,7 @@ const FriendsList = () => {
         <div className="text-center py-8">
           <Users className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-neutral-400 mb-2">
-            Пока нет друзей
+            No friends
           </h3>
           <p className="text-neutral-500">Nobody here but chickens!</p>
         </div>
@@ -170,7 +170,7 @@ const FriendsList = () => {
                 </button>
 
                 {/* Profile Image / Initial */}
-                <div className="aspect-square flex items-center justify-center text-white text-2xl font-bold bg-gradient-to-br from-blue-400 to-violet-500">
+                <div className="aspect-square flex items-center justify-center text-white text-2xl font-bold bg-gradient-to-br from-rose-400 to-red-500">
                   {friend.avatarUrl ? (
                     <img
                       src={friend.avatarUrl}
@@ -178,7 +178,7 @@ const FriendsList = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span>
+                    <span className="text-5xl">
                       {(friend.name || friend.username || "F")
                         .charAt(0)
                         .toUpperCase()}
@@ -190,13 +190,11 @@ const FriendsList = () => {
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="text-lg font-semibold text-white">
-                        <Link
-                          to={`/chat/${friend.id}`}
-                          className="hover:text-rose-400 transition-colors"
-                        >
-                          {friend.name || friend.username || "Unnamed"}
-                        </Link>
+                      <h3
+                        className="text-lg font-semibold text-white cursor-pointer hover:text-rose-400 transition-colors"
+                        onClick={() => onProfileClick?.(friend)}
+                      >
+                        {friend.name || friend.username || "Unnamed"}
                       </h3>
                       {friend.username && friend.name && (
                         <p className="text-sm text-neutral-400">

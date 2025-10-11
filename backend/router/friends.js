@@ -128,6 +128,10 @@ friendsRouter.get(
             select: {
               id: true,
               username: true,
+              avatarUrl: true,
+              bio: true,
+              birthday: true,
+              name: true,
             },
           },
         },
@@ -469,6 +473,57 @@ friendsRouter.delete(
       );
     } catch (error) {
       handleError(res, error, "Failed to remove friend");
+    }
+  }
+);
+
+friendsRouter.put(
+  "/requests/cancel/:requestId",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    const { requestId } = req.params;
+
+    try {
+      // Find the request and ensure user can only cancel their own sent requests
+      const request = await prisma.friendRequest.findFirst({
+        where: {
+          id: requestId,
+          fromUserId: req.user.id, // Ensure user can only cancel requests they sent
+          status: "pending",
+        },
+        include: {
+          toUser: {
+            select: {
+              id: true,
+              username: true,
+            },
+          },
+        },
+      });
+
+      if (!request) {
+        return sendResponse(
+          res,
+          404,
+          false,
+          "Friend request not found or you don't have permission to cancel it"
+        );
+      }
+
+      // Update the request status to cancelled
+      await prisma.friendRequest.update({
+        where: { id: requestId },
+        data: { status: "cancelled" },
+      });
+
+      sendResponse(
+        res,
+        200,
+        true,
+        `Successfully cancelled friend request to ${request.toUser.username}`
+      );
+    } catch (error) {
+      handleError(res, error, "Failed to cancel friend request");
     }
   }
 );

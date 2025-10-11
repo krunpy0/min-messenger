@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { User, Settings, LogOut } from "lucide-react";
 
-const ProfileHeader = () => {
+const ProfileHeader = ({ onProfileClick }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -82,9 +82,9 @@ const ProfileHeader = () => {
   return (
     <div className="">
       <div className="max-w-[1120px] w-[97vw] mx-auto flex items-center justify-between bg-[#202020] border border-[#363636] rounded-2xl p-4">
-        <Link
-          to="/customize"
-          className="flex items-center gap-3 hover:bg-[#2a2a2a] rounded-lg p-2 transition-colors group"
+        <button
+          onClick={() => onProfileClick?.(user, true)}
+          className="flex items-center gap-3 hover:bg-[#2a2a2a] rounded-lg p-2 transition-colors group w-full text-left"
         >
           {/* Profile Image / Initial */}
           <div className="w-10 h-10 flex items-center justify-center text-white text-lg font-bold bg-gradient-to-br from-blue-400 to-violet-500 rounded-full">
@@ -109,7 +109,7 @@ const ProfileHeader = () => {
               <span className="text-sm text-neutral-400">@{user.username}</span>
             )}
           </div>
-        </Link>
+        </button>
 
         <div className="flex items-center gap-2">
           <Link
