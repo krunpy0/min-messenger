@@ -19,8 +19,13 @@ mainRouter.use("/friends", friendsRouter);
 mainRouter.use("/chats", chatsRouter);
 mainRouter.use("/files", filesRouter);
 mainRouter.post("/logout", (req, res) => {
-  res.clearCookie("token");
-  res.json({ message: "Successfully logged out" });
+  try {
+    res.clearCookie("token");
+    res.json({ message: "Successfully logged out" });
+  } catch (err) {
+    console.error("Error in logout:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 module.exports = mainRouter;

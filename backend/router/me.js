@@ -50,20 +50,24 @@ meRouter.get(
   "/extended",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        birthday: true,
-        bio: true,
-        avatarUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-    return res.status(200).json({ user: user });
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: {
+          id: true,
+          username: true,
+          name: true,
+          birthday: true,
+          bio: true,
+          avatarUrl: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      return res.status(200).json({ user: user });
+    } catch (error) {
+      handleError(res, error, "Failed to retrieve extended user profile");
+    }
   }
 );
 

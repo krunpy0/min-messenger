@@ -39,25 +39,33 @@ filesRouter.post(
   passport.authenticate("jwt", { session: false }),
   upload.array("files[]"),
   async (req, res) => {
-    const files = await Promise.all(
-      req.files.map(async (f) => {
-        let fileSize = f.size;
-        if (fileSize === 0) {
-          const headObjectCommand = new HeadObjectCommand({
-            Bucket: "krunpy-main",
-            Key: f.key,
-          });
-          const headObject = await s3.send(headObjectCommand);
-          fileSize = headObject.ContentLength;
-        }
-        return {
-          url: f.location,
-          name: f.originalname,
-          size: fileSize,
-        };
-      })
-    );
-    res.json(files);
+    try {
+      const files = await Promise.all(
+        req.files.map(async (f) => {
+          let fileSize = f.size;
+          if (fileSize === 0) {
+            const headObjectCommand = new HeadObjectCommand({
+              Bucket: "krunpy-main",
+              Key: f.key,
+            });
+            const headObject = await s3.send(headObjectCommand);
+            fileSize = headObject.ContentLength;
+          }
+          return {
+            url: f.location,
+            name: f.originalname,
+            size: fileSize,
+          };
+        })
+      );
+      res.json(files);
+    } catch (err) {
+      console.error("Error in /storage:", err);
+      res.status(500).json({
+        success: false,
+        message: "Failed to upload files",
+      });
+    }
   }
 );
 
@@ -66,16 +74,31 @@ filesRouter.post(
   passport.authenticate("jwt", { session: false }),
   upload.single("file"),
   async (req, res) => {
-    const f = req.file;
-    const cdnUrl = f.location.replace(
-      "https://storage.yandexcloud.net/krunpy-main",
-      "https://cdn.krunpy.ru"
-    );
-    return res.status(201).json({
-      url: cdnUrl,
-      name: f.originalname,
-      size: f.size,
-    });
+    try {
+      const f = req.file;
+      if (!f) {
+        return res.status(400).json({
+          success: false,
+          message: "No file uploaded",
+        });
+      }
+      const cdnUrl = f.location.replace(
+        "https://storage.yandexcloud.net/krunpy-main",
+        "https://cdn.krunpy.ru"
+      );
+      return res.status(201).json({
+        success: true,
+        url: cdnUrl,
+        name: f.originalname,
+        size: f.size,
+      });
+    } catch (err) {
+      console.error("Error in /cdn:", err);
+      res.status(500).json({
+        success: false,
+        message: "Failed to upload file",
+      });
+    }
   }
 );
 module.exports = filesRouter;
