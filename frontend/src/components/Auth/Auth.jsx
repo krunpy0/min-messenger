@@ -71,6 +71,7 @@ export function Auth() {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen gap-2 w-full">
+      <title>Authenfication</title>
       <h1 className="text-4xl font-semibold mb-2">
         {isLogin ? "Log in" : "Sign up"}
       </h1>

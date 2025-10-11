@@ -53,6 +53,7 @@ const HomePage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+        <title>Home</title>
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-rose-400 animate-spin mx-auto mb-4" />
           <p className="text-neutral-400">Loading...</p>
@@ -67,6 +68,7 @@ const HomePage = () => {
 
   return (
     <div className="min-h-[100vh] bg-[#1a1a1a]">
+      <title>Home</title>
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-2">
           {/* Profile Header */}
