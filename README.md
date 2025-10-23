@@ -40,7 +40,7 @@ A simple messaging application I built while learning full-stack development as 
 1. Clone the repository:
 
 ```bash
-git clone <repository-url>
+https://github.com/krunpy0/min-messenger.git
 cd min-messenger
 ```
 
