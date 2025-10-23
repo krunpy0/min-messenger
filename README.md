@@ -97,7 +97,6 @@ min-messenger/
 
 - `POST /auth/login` - User login
 - `POST /auth/register` - User registration
-- `GET /auth/google` - Google OAuth
 - `GET /api/users` - Get users
 - `POST /api/messages` - Send message
 - `GET /api/messages/:chatId` - Get chat messages
