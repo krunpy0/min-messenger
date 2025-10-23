@@ -87,8 +87,7 @@ min-messenger/
 │   └── router/       # API routes
 ├── frontend/         # React frontend
 │   ├── src/
-│   │   ├── components/
-│   │   └── pages/
+│   │   └── components/
 │   └── public/
 └── package.json
 ```
