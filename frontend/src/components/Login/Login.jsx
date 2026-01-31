@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 export function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -12,7 +13,7 @@ export function Login() {
 
   async function checkAuth() {
     try {
-      const res = await fetch("http://localhost:3000/api/me", {
+      const res = await fetch(`${API_BASE_URL}/api/me`, {
         credentials: "include",
       });
       const result = await res.json();
@@ -31,7 +32,7 @@ export function Login() {
     setResultStatus(null);
 
     try {
-      const res = await fetch("http://localhost:3000/api/login", {
+      const res = await fetch(`${API_BASE_URL}/api/login`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

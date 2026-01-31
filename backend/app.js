@@ -6,7 +6,8 @@ const prisma = require("./prisma");
 const jwt = require("jsonwebtoken");
 const { instrument } = require("@socket.io/admin-ui");
 const mime = require("mime-types");
-const { S3Client, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+const path = require("path");
+const fs = require("fs");
 require("dotenv").config();
 
 const app = express();
@@ -21,9 +22,35 @@ app.use(
 );
 
 const mainRouter = require("./router/main");
-const { socket } = require("../frontend/src/socket");
 
 app.use("/api", mainRouter);
+
+// Эндпоинт для получения файлов
+const mediaDir = path.join(__dirname, "media");
+// Создаем папку media, если её нет
+if (!fs.existsSync(mediaDir)) {
+  fs.mkdirSync(mediaDir, { recursive: true });
+}
+
+app.get("/media/:filename", (req, res) => {
+  const filename = req.params.filename;
+  // Защита от path traversal атак
+  const safeFilename = path.basename(filename);
+  const filePath = path.join(mediaDir, safeFilename);
+
+  // Проверяем существование файла
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ message: "File not found" });
+  }
+
+  // Определяем MIME тип
+  const mimeType = mime.lookup(filePath) || "application/octet-stream";
+  res.setHeader("Content-Type", mimeType);
+  
+  // Отправляем файл
+  res.sendFile(filePath);
+});
+
 app.get("/", (req, res) => {
   console.log(req.cookies);
 });
@@ -176,32 +203,50 @@ async function editMessage(cookieHeader, chatId, message, newText) {
 }
 
 async function deleteFileFromBucket(file) {
-  const s3 = new S3Client({
-    region: "ru-central1",
-    endpoint: "https://storage.yandexcloud.net/",
-    forcePathStyle: true,
-    credentials: {
-      accessKeyId: process.env.YA_ACCESS_KEY,
-      secretAccessKey: process.env.YA_SECRET_KEY,
-    },
-  });
-  // Derive correct S3 object key from file URL. Supports both storage and CDN URLs.
-  let key = `uploads/${file?.name || ""}`;
-  if (file && file.url) {
-    try {
-      const u = new URL(file.url);
-      // "/krunpy-main/uploads/.." -> "uploads/..."; "/uploads/..." -> "uploads/..."
-      key = u.pathname.replace(/^\/krunpy-main\//, "").replace(/^\//, "");
-    } catch (e) {
-      // fallback to name-based key
+  try {
+    // Извлекаем имя файла из URL
+    // URL может быть вида /media/filename или полный URL (http://host/media/filename)
+    let filename = null;
+    if (file && file.url) {
+      try {
+        // Пытаемся распарсить как полный URL
+        const url = new URL(file.url);
+        // Извлекаем имя файла из пути /media/filename
+        filename = path.basename(url.pathname);
+      } catch (e) {
+        // Если это относительный путь вида /media/filename
+        if (file.url.startsWith("/media/")) {
+          filename = path.basename(file.url);
+        } else {
+          filename = path.basename(file.url);
+        }
+      }
+    } else if (file?.name) {
+      // Fallback на имя файла (но это оригинальное имя, не сохраненное)
+      // В этом случае не можем удалить, так как не знаем сохраненное имя
+      console.log("Cannot determine saved filename from original name");
+      return;
     }
+
+    if (!filename) {
+      console.log("Cannot determine filename for deletion");
+      return;
+    }
+
+    // Защита от path traversal
+    const safeFilename = path.basename(filename);
+    const filePath = path.join(mediaDir, safeFilename);
+
+    // Удаляем файл, если он существует
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`Deleted file: ${filePath}`);
+    } else {
+      console.log(`File not found: ${filePath}`);
+    }
+  } catch (err) {
+    console.error("Error deleting file:", err);
   }
-  const deleteObjectCommand = new DeleteObjectCommand({
-    Bucket: "krunpy-main",
-    Key: key,
-  });
-  const deletedObject = await s3.send(deleteObjectCommand);
-  return deletedObject;
 }
 
 io.on("connection", async (socket) => {

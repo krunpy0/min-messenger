@@ -3,32 +3,30 @@ const passport = require("passport");
 const prisma = require("../prisma");
 const filesRouter = express.Router();
 const multer = require("multer");
-const multerS3 = require("multer-s3");
-const { S3Client, HeadObjectCommand } = require("@aws-sdk/client-s3");
+const path = require("path");
+const fs = require("fs");
 require("dotenv").config();
 
-const s3 = new S3Client({
-  region: "ru-central1",
-  endpoint: "https://storage.yandexcloud.net/",
-  forcePathStyle: true,
-  credentials: {
-    accessKeyId: process.env.YA_ACCESS_KEY,
-    secretAccessKey: process.env.YA_SECRET_KEY,
+const uploadsDir = path.join(__dirname, "..", "media");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const safeName = file.originalname
+      .replace(/ /g, "_")
+      .replace(/[^\w\.\-]/g, "");
+    const uniqueName = `${Date.now()}_${safeName}`;
+    cb(null, uniqueName);
   },
 });
 
 const upload = multer({
-  storage: multerS3({
-    s3,
-    bucket: "krunpy-main",
-    acl: "public-read",
-    key: (req, file, cb) => {
-      const safeName = file.originalname
-        .replace(/ /g, "_")
-        .replace(/[^\w\.\-]/g, "");
-      cb(null, `uploads/${Date.now()}_${safeName}`);
-    },
-  }),
+  storage: storage,
   limits: {
     fileSize: 1000 * 1024 * 1024,
   },
@@ -40,24 +38,18 @@ filesRouter.post(
   upload.array("files[]"),
   async (req, res) => {
     try {
-      const files = await Promise.all(
-        req.files.map(async (f) => {
-          let fileSize = f.size;
-          if (fileSize === 0) {
-            const headObjectCommand = new HeadObjectCommand({
-              Bucket: "krunpy-main",
-              Key: f.key,
-            });
-            const headObject = await s3.send(headObjectCommand);
-            fileSize = headObject.ContentLength;
-          }
-          return {
-            url: f.location,
-            name: f.originalname,
-            size: fileSize,
-          };
-        })
-      );
+      const protocol = req.protocol;
+      const host = req.get("host");
+      const baseUrl = `${protocol}://${host}`;
+      
+      const files = req.files.map((f) => {
+        const filename = f.filename;
+        return {
+          url: `${baseUrl}/media/${filename}`,
+          name: f.originalname,
+          size: f.size,
+        };
+      });
       res.json(files);
     } catch (err) {
       console.error("Error in /storage:", err);
@@ -82,13 +74,15 @@ filesRouter.post(
           message: "No file uploaded",
         });
       }
-      const cdnUrl = f.location.replace(
-        "https://storage.yandexcloud.net/krunpy-main",
-        "https://cdn.krunpy.ru"
-      );
+
+      const protocol = req.protocol;
+      const host = req.get("host");
+      const baseUrl = `${protocol}://${host}`;
+      
+      const filename = f.filename;
       return res.status(201).json({
         success: true,
-        url: cdnUrl,
+        url: `${baseUrl}/media/${filename}`,
         name: f.originalname,
         size: f.size,
       });

@@ -7,7 +7,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import MessageItem from "./MessageItem";
 import AttachmentsBar from "./AttachmentsBar";
 import Composer from "./Composer";
-import bytes from "bytes";
+
 
 dayjs.extend(relativeTime);
 export default function ChatComponent() {
@@ -31,10 +31,10 @@ export default function ChatComponent() {
   const navigate = useNavigate();
   // const [input, setInput] = useState("");
   // const [room, setRoom] = useState("");
+
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const { room } = useParams();
   console.log(room);
-  function editMessage(message) {}
   async function getUser() {
     const res = await fetch(`${API_BASE_URL}/api/me`, {
       credentials: "include",
@@ -116,7 +116,7 @@ export default function ChatComponent() {
       console.log("Error fetching friend info:", err);
     }
   }
-
+  console.log(room)
   async function getChatInfo() {
     try {
       const result = await fetch(`${API_BASE_URL}/api/chats/${room}`, {
@@ -124,8 +124,8 @@ export default function ChatComponent() {
       });
       const response = await result.json();
       console.log(response);
-      if (!response) {
-        setChat(null);
+      if (!result.ok) {
+        createChat()
       } else {
         setChat(response);
         setNextOffset(0);
@@ -358,6 +358,7 @@ export default function ChatComponent() {
         return null;
       }
       setChat(response);
+      getChatInfo()
       return response;
     } catch (err) {
       console.log(err);
@@ -383,7 +384,7 @@ export default function ChatComponent() {
   function buildFormData() {
     const form = new FormData();
     form.append("text", message || "");
-    attachments.forEach((file, idx) => {
+    attachments.forEach((file) => {
       form.append("files[]", file, file.name);
     });
     return form;
@@ -448,7 +449,7 @@ export default function ChatComponent() {
       {/* Header with back button and friend info */}
       <div className="flex items-center gap-3 p-3 pt-safe border border-neutral-700 bg-neutral-900 flex-shrink-0 mt-2 rounded-2xl w-[95%] md:w-[99%] mx-auto">
         <button
-          onClick={(e) => navigate("/")}
+          onClick={() => navigate("/")}
           className="flex items-center justify-center gap-2 px-3 py-2 bg-rose-600
                    border border-rose-400 text-white rounded-lg font-medium 
                    hover:bg-rose-700 hover:shadow-lg
