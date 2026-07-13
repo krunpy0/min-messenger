@@ -22,6 +22,7 @@
     "socket.io": "^4.8.1"
   },
   "scripts": {
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "start": "node app.js"
   }
 }

@@ -9,15 +9,24 @@ const { S3Client, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const mime = require("mime-types");
 const path = require("path");
 const fs = require("fs");
+const http = require("http");
 require("dotenv").config();
 
 const app = express();
+const server = http.createServer(app);
+const port = Number(process.env.PORT) || 3000;
+const appOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const corsOrigins = [...new Set([...appOrigins, "https://admin.socket.io"])];
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: corsOrigins,
     credentials: true,
   })
 );
@@ -77,12 +86,12 @@ app.get("/media/:filename", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  console.log(req.cookies);
+  res.json({ status: "ok" });
 });
 
-const io = require("socket.io")(8080, {
+const io = require("socket.io")(server, {
   cors: {
-    origin: ["http://localhost:5173", "https://admin.socket.io"],
+    origin: corsOrigins,
     credentials: true,
   },
 });
@@ -381,6 +390,6 @@ process.on("unhandledRejection", (reason, promise) => {
   process.exit(1);
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`server is running at http://localhost:${process.env.PORT}`);
+server.listen(port, () => {
+  console.log(`server is running at http://localhost:${port}`);
 });
