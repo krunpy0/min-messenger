@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { AddFriend } from "../AddFriend/AddFriend";
 import {
@@ -11,6 +11,10 @@ import {
   Loader2,
   Trash2,
 } from "lucide-react";
+import {
+  emitFriendsUpdated,
+  subscribeToFriendsUpdates,
+} from "../../lib/friendsEvents";
 
 const FriendsPage = () => {
   const [friends, setFriends] = useState([]);
@@ -19,61 +23,38 @@ const FriendsPage = () => {
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-  useEffect(() => {
-    const fetchFriends = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchFriends = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const response = await fetch(`${API_BASE_URL}/api/friends`, {
-          credentials: "include",
-        });
+      const response = await fetch(`${API_BASE_URL}/api/friends`, {
+        credentials: "include",
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.message || `HTTP Error: ${response.status}`);
-        }
-
-        setFriends(data.data || []);
-      } catch (err) {
-        setError(err.message);
-        console.error("Error loading friends:", err);
-        alert(`❌ Failed to load friends: ${err.message}`);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP Error: ${response.status}`);
       }
-    };
 
+      setFriends(data.data || []);
+    } catch (err) {
+      setError(err.message);
+      console.error("Error loading friends:", err);
+      alert(`❌ Failed to load friends: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [API_BASE_URL]);
+
+  useEffect(() => {
     fetchFriends();
-  }, []);
+
+    return subscribeToFriendsUpdates(fetchFriends);
+  }, [fetchFriends]);
 
   const handleRefresh = () => {
-    const fetchFriends = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch(`${API_BASE_URL}/api/friends`, {
-          credentials: "include",
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || `HTTP Error: ${response.status}`);
-        }
-
-        setFriends(data.data || []);
-      } catch (err) {
-        setError(err.message);
-        console.error("Error loading friends:", err);
-        alert(`❌ Failed to load friends: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchFriends();
   };
 
@@ -102,8 +83,7 @@ const FriendsPage = () => {
       }
 
       alert(`✅ ${data.message}`);
-      // Refresh the friends list
-      handleRefresh();
+      emitFriendsUpdated({ type: "friend-removed", friendId });
     } catch (err) {
       console.error("Error removing friend:", err);
       alert(`❌ Failed to remove friend: ${err.message}`);

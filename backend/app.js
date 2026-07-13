@@ -2,9 +2,10 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const passport = require("./passport");
-const prisma = require("./prisma");
+const prisma = require("./db");
 const jwt = require("jsonwebtoken");
 const { instrument } = require("@socket.io/admin-ui");
+const { S3Client, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const mime = require("mime-types");
 const path = require("path");
 const fs = require("fs");
@@ -20,6 +21,30 @@ app.use(
     credentials: true,
   })
 );
+
+const {
+  S3_REGION,
+  S3_BUCKET,
+  S3_ACCESS_KEY_ID,
+  S3_SECRET_ACCESS_KEY,
+  S3_ENDPOINT,
+  S3_PUBLIC_BASE_URL,
+} = process.env;
+
+const s3ClientConfig = {
+  region: S3_REGION,
+  credentials: {
+    accessKeyId: S3_ACCESS_KEY_ID,
+    secretAccessKey: S3_SECRET_ACCESS_KEY,
+  },
+};
+
+if (S3_ENDPOINT) {
+  s3ClientConfig.endpoint = S3_ENDPOINT;
+  s3ClientConfig.forcePathStyle = true;
+}
+
+const s3 = new S3Client(s3ClientConfig);
 
 const mainRouter = require("./router/main");
 
@@ -204,45 +229,51 @@ async function editMessage(cookieHeader, chatId, message, newText) {
 
 async function deleteFileFromBucket(file) {
   try {
-    // Извлекаем имя файла из URL
-    // URL может быть вида /media/filename или полный URL (http://host/media/filename)
-    let filename = null;
+    let objectKey = null;
     if (file && file.url) {
       try {
-        // Пытаемся распарсить как полный URL
         const url = new URL(file.url);
-        // Извлекаем имя файла из пути /media/filename
-        filename = path.basename(url.pathname);
-      } catch (e) {
-        // Если это относительный путь вида /media/filename
-        if (file.url.startsWith("/media/")) {
-          filename = path.basename(file.url);
+        const pathname = decodeURIComponent(url.pathname).replace(/^\/+/, "");
+
+        if (S3_PUBLIC_BASE_URL && file.url.startsWith(S3_PUBLIC_BASE_URL)) {
+          objectKey = pathname;
+        } else if (url.pathname.startsWith("/media/")) {
+          objectKey = path.basename(url.pathname);
         } else {
-          filename = path.basename(file.url);
+          objectKey = pathname;
+        }
+      } catch (e) {
+        if (file.url.startsWith("/media/")) {
+          objectKey = path.basename(file.url);
+        } else {
+          objectKey = file.url.replace(/^\/+/, "");
         }
       }
-    } else if (file?.name) {
-      // Fallback на имя файла (но это оригинальное имя, не сохраненное)
-      // В этом случае не можем удалить, так как не знаем сохраненное имя
-      console.log("Cannot determine saved filename from original name");
+    }
+
+    if (!objectKey) {
+      console.log("Cannot determine object key for deletion");
       return;
     }
 
-    if (!filename) {
-      console.log("Cannot determine filename for deletion");
-      return;
-    }
+    if (file.url.startsWith("/media/")) {
+      const safeFilename = path.basename(objectKey);
+      const filePath = path.join(mediaDir, safeFilename);
 
-    // Защита от path traversal
-    const safeFilename = path.basename(filename);
-    const filePath = path.join(mediaDir, safeFilename);
-
-    // Удаляем файл, если он существует
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      console.log(`Deleted file: ${filePath}`);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`Deleted file: ${filePath}`);
+      } else {
+        console.log(`File not found: ${filePath}`);
+      }
     } else {
-      console.log(`File not found: ${filePath}`);
+      await s3.send(
+        new DeleteObjectCommand({
+          Bucket: S3_BUCKET,
+          Key: objectKey,
+        })
+      );
+      console.log(`Deleted S3 object: ${objectKey}`);
     }
   } catch (err) {
     console.error("Error deleting file:", err);

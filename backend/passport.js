@@ -1,7 +1,7 @@
 const passport = require("passport");
 
 const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
-const prisma = require("./prisma");
+const prisma = require("./db");
 
 const cookieExtractor = (req) =>
   req && req.cookies ? req.cookies.token || null : null;

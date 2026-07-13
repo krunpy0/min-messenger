@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { UserPlus, Search, Loader2, AlertCircle } from "lucide-react";
+import { emitFriendsUpdated } from "../../lib/friendsEvents";
 
 export function AddFriendCard() {
   const [friend, setFriend] = useState("");
@@ -64,6 +65,7 @@ export function AddFriendCard() {
       // Clear search results after successful request
       setResults([]);
       setFriend("");
+      emitFriendsUpdated({ type: "request-sent", friendId });
     } catch (err) {
       console.error("Error sending friend request:", err);
       alert(`❌ Failed to send friend request: ${err.message}`);

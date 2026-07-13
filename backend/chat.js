@@ -1,4 +1,4 @@
-const prisma = require("./prisma");
+const prisma = require("./db");
 
 async function ensureMember(userId, chatId) {
   const user = await prisma.chat.findUnique({

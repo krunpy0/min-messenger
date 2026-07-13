@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Users,
@@ -9,6 +9,10 @@ import {
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
+import {
+  emitFriendsUpdated,
+  subscribeToFriendsUpdates,
+} from "../../lib/friendsEvents";
 
 const FriendsList = ({ onProfileClick }) => {
   const [friends, setFriends] = useState([]);
@@ -17,11 +21,7 @@ const FriendsList = ({ onProfileClick }) => {
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-  useEffect(() => {
-    fetchFriends();
-  }, []);
-
-  const fetchFriends = async () => {
+  const fetchFriends = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -36,14 +36,19 @@ const FriendsList = ({ onProfileClick }) => {
       }
 
       setFriends(data.data || []);
-      console.log(friends);
     } catch (err) {
       setError(err.message);
       console.error("Error loading friends:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL]);
+
+  useEffect(() => {
+    fetchFriends();
+
+    return subscribeToFriendsUpdates(fetchFriends);
+  }, [fetchFriends]);
 
   const handleRemoveFriend = async (friendId, friendUsername) => {
     if (
@@ -70,7 +75,7 @@ const FriendsList = ({ onProfileClick }) => {
       }
 
       alert(`✅ ${data.message}`);
-      fetchFriends();
+      emitFriendsUpdated({ type: "friend-removed", friendId });
     } catch (err) {
       console.error("Error removing friend:", err);
       alert(`❌ Ошибка при удалении друга: ${err.message}`);

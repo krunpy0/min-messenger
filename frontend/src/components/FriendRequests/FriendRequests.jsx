@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   UserCheck,
   UserPlus,
@@ -9,6 +9,10 @@ import {
   X,
   Clock,
 } from "lucide-react";
+import {
+  emitFriendsUpdated,
+  subscribeToFriendsUpdates,
+} from "../../lib/friendsEvents";
 
 export function FriendRequests({ onProfileClick }) {
   const [receivedRequests, setReceivedRequests] = useState([]);
@@ -19,31 +23,45 @@ export function FriendRequests({ onProfileClick }) {
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-  async function getRequests() {
+  const getRequests = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [received, sent] = await Promise.all([
+      const [receivedResponse, sentResponse] = await Promise.all([
         fetch(`${API_BASE_URL}/api/friends/requests/received`, {
           credentials: "include",
-        }).then((r) => r.json()),
+        }),
 
         fetch(`${API_BASE_URL}/api/friends/requests/sent`, {
           credentials: "include",
-        }).then((r) => r.json()),
+        }),
       ]);
 
+      const [received, sent] = await Promise.all([
+        receivedResponse.json(),
+        sentResponse.json(),
+      ]);
+
+      if (!receivedResponse.ok) {
+        throw new Error(
+          received.message || `HTTP Error: ${receivedResponse.status}`
+        );
+      }
+
+      if (!sentResponse.ok) {
+        throw new Error(sent.message || `HTTP Error: ${sentResponse.status}`);
+      }
+
       setReceivedRequests(received.data || []);
-      setSentRequests(sent.data);
+      setSentRequests(sent.data || []);
     } catch (err) {
-      console.log(err);
+      setError(err.message);
+      console.error("Error loading friend requests:", err);
     } finally {
       setLoading(false);
     }
+  }, [API_BASE_URL]);
 
-    console.log(sentRequests);
-    console.log(receivedRequests);
-  }
   async function acceptRequest(requestId) {
     try {
       const response = await fetch(
@@ -61,7 +79,7 @@ export function FriendRequests({ onProfileClick }) {
       }
 
       alert(`✅ ${data.message}`);
-      getRequests(); // Refresh the list
+      emitFriendsUpdated({ type: "request-accepted", requestId });
     } catch (err) {
       console.error("Error accepting friend request:", err);
       alert(`❌ Failed to accept request: ${err.message}`);
@@ -85,7 +103,7 @@ export function FriendRequests({ onProfileClick }) {
       }
 
       alert(`✅ ${data.message}`);
-      getRequests(); // Refresh the list
+      emitFriendsUpdated({ type: "request-declined", requestId });
     } catch (err) {
       console.error("Error declining friend request:", err);
       alert(`❌ Failed to decline request: ${err.message}`);
@@ -109,7 +127,7 @@ export function FriendRequests({ onProfileClick }) {
       }
 
       alert(`✅ ${data.message}`);
-      getRequests(); // Refresh the list
+      emitFriendsUpdated({ type: "request-cancelled", requestId });
     } catch (err) {
       console.error("Error canceling friend request:", err);
       alert(`❌ Failed to cancel request: ${err.message}`);
@@ -117,7 +135,9 @@ export function FriendRequests({ onProfileClick }) {
   }
   useEffect(() => {
     getRequests();
-  }, []);
+
+    return subscribeToFriendsUpdates(getRequests);
+  }, [getRequests]);
 
   if (loading) {
     return (

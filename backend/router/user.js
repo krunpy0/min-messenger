@@ -1,7 +1,7 @@
 const express = require("express");
 const userRouter = express.Router();
 const passport = require("passport");
-const prisma = require("../prisma");
+const prisma = require("../db");
 
 // Standardized response helper
 const sendResponse = (res, statusCode, success, message, data = null) => {

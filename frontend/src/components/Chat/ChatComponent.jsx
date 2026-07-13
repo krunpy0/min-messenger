@@ -292,19 +292,7 @@ export default function ChatComponent() {
 
       // Collect files into attachments state (no upload yet)
       if (dt.files && dt.files.length > 0) {
-        const incoming = Array.from(dt.files).filter((f) => f && f.size >= 0);
-        if (incoming.length > 0) {
-          setAttachments((prev) => {
-            const byKey = new Map(
-              prev.map((f) => [`${f.name}:${f.size}:${f.lastModified}`, f])
-            );
-            for (const file of incoming) {
-              const key = `${file.name}:${file.size}:${file.lastModified}`;
-              if (!byKey.has(key)) byKey.set(key, file);
-            }
-            return Array.from(byKey.values());
-          });
-        }
+        addAttachments(Array.from(dt.files));
       }
     }
 
@@ -368,6 +356,22 @@ export default function ChatComponent() {
 
   function displayMessage(message) {
     setMessages((prev) => [...prev, message]);
+  }
+
+  function addAttachments(incomingFiles) {
+    const incoming = incomingFiles.filter((f) => f && f.size >= 0);
+    if (incoming.length <= 0) return;
+
+    setAttachments((prev) => {
+      const byKey = new Map(
+        prev.map((f) => [`${f.name}:${f.size}:${f.lastModified}`, f])
+      );
+      for (const file of incoming) {
+        const key = `${file.name}:${file.size}:${file.lastModified}`;
+        if (!byKey.has(key)) byKey.set(key, file);
+      }
+      return Array.from(byKey.values());
+    });
   }
 
   // Remove a single attachment
@@ -548,6 +552,7 @@ export default function ChatComponent() {
           value={message}
           onChange={setMessage}
           onSubmit={sendMessage}
+          onSelectFiles={addAttachments}
         />
       </div>
       {isDragging && (
